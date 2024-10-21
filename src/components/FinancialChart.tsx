@@ -484,7 +484,7 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
               isBacktestRunning={isBacktestRunning}
               handleRunBacktest={handleRunBacktest}
               handleCancelBacktest={handleCancelBacktest}
-            />
+            /> 
           </div>
         </div>
 
