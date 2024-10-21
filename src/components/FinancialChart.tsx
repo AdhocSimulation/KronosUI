@@ -1,14 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Highcharts from 'highcharts/highstock';
 import HighchartsReact from 'highcharts-react-official';
 import axios from 'axios';
-import {
-  ChevronDown,
-  X,
-  BarChart,
-  CandlestickChart,
-  LineChart,
-} from 'lucide-react';
+import { BarChart, CandlestickChart, LineChart, X } from 'lucide-react';
 import ChartTooltip from './ChartTooltip';
 import ReactDOMServer from 'react-dom/server';
 import { runBacktest, cancelBacktest } from '../services/backtestService';
@@ -55,7 +49,7 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
   const [backtestSeries, setBacktestSeries] = useState('BTCUSDT');
   const [isBacktestRunning, setIsBacktestRunning] = useState(false);
   const [events, setEvents] = useState<Event[]>(dummyEvents);
-  const [activeEventLines, setActiveEventLines] = useState<number[]>([]);
+  const [activeEventLines, setActiveEventLines] = useState<Set<number>>(new Set());
   const chartRef = useRef<HighchartsReact.RefObject>(null);
 
   const timeGranularities = [
@@ -133,7 +127,111 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
     return data;
   };
 
-  const getChartOptions = (): Highcharts.Options => ({
+  const drawEvents = useCallback((chart: Highcharts.Chart) => {
+    // Remove existing event elements
+    chart.renderer.boxWrapper.element.querySelectorAll('.event-element').forEach(el => el.remove());
+
+    const xAxis = chart.xAxis[0];
+    const yAxis = chart.yAxis[0];
+    const chartLeft = chart.plotLeft;
+    const chartRight = chart.plotLeft + chart.plotWidth;
+    const chartTop = chart.plotTop;
+    const chartBottom = chart.plotTop + chart.plotHeight;
+
+    events.forEach((event) => {
+      const xPos = xAxis.toPixels(event.date);
+      const yPos = yAxis.toPixels(yAxis.getExtremes().min);
+
+      if (xPos !== undefined && yPos !== undefined &&
+          xPos >= chartLeft && xPos <= chartRight &&
+          yPos >= chartTop && yPos <= chartBottom) {
+        const circle = chart.renderer
+          .circle(xPos, yPos, 10)
+          .attr({
+            fill: colorMode === 'dark' ? '#ffa500' : '#2563eb',
+            zIndex: 5,
+            class: 'event-element',
+          })
+          .css({
+            cursor: 'pointer',
+          })
+          .add();
+
+        chart.renderer
+          .text(event.title, xPos - 20, yPos + 20)
+          .attr({
+            zIndex: 5,
+            class: 'event-element',
+          })
+          .css({
+            color: colorMode === 'dark' ? '#e5e7eb' : '#111827',
+            fontSize: '10px',
+            cursor: 'pointer',
+          })
+          .add();
+
+        // Add click event to the circle
+        (circle.element as HTMLElement).onclick = () => {
+          // Toggle vertical line
+          if (activeEventLines.has(event.date)) {
+            activeEventLines.delete(event.date);
+            chart.renderer.boxWrapper.element.querySelector(`.vertical-line-${event.date}`)?.remove();
+          } else {
+            activeEventLines.add(event.date);
+            chart.renderer
+              .path(['M', xPos, chartTop, 'L', xPos, chartBottom])
+              .attr({
+                'stroke-width': 1,
+                stroke: colorMode === 'dark' ? '#e5e7eb' : '#4b5563',
+                dashstyle: 'shortdash',
+                zIndex: 4,
+                class: `vertical-line-${event.date} event-element`,
+              })
+              .add();
+          }
+          setActiveEventLines(new Set(activeEventLines));
+        };
+
+        // Add hover event to the circle
+        (circle.element as HTMLElement).onmouseover = () => {
+          const tooltipContainer = document.createElement('div');
+          tooltipContainer.className = `event-tooltip ${colorMode === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} p-2 rounded shadow-lg`;
+          tooltipContainer.style.position = 'absolute';
+          tooltipContainer.style.left = `${xPos + 15}px`;
+          tooltipContainer.style.top = `${yPos - 15}px`;
+          tooltipContainer.style.zIndex = '1000';
+          tooltipContainer.innerHTML = `
+            <h3 class="font-bold">${event.title}</h3>
+            <p>${event.description}</p>
+          `;
+          document.body.appendChild(tooltipContainer);
+        };
+
+        (circle.element as HTMLElement).onmouseout = () => {
+          const tooltipContainer = document.querySelector('.event-tooltip');
+          if (tooltipContainer) {
+            tooltipContainer.remove();
+          }
+        };
+
+        // Redraw active event lines
+        if (activeEventLines.has(event.date)) {
+          chart.renderer
+            .path(['M', xPos, chartTop, 'L', xPos, chartBottom])
+            .attr({
+              'stroke-width': 1,
+              stroke: colorMode === 'dark' ? '#e5e7eb' : '#4b5563',
+              dashstyle: 'shortdash',
+              zIndex: 4,
+              class: `vertical-line-${event.date} event-element`,
+            })
+            .add();
+        }
+      }
+    });
+  }, [events, colorMode, activeEventLines]);
+
+  const getChartOptions = useCallback((): Highcharts.Options => ({
     chart: {
       backgroundColor: colorMode === 'dark' ? '#1f2937' : '#ffffff',
       height: '80%',
@@ -142,6 +240,8 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
           drawEvents(this);
         },
         redraw: function (this: Highcharts.Chart) {
+          // Remove all tooltips before redrawing
+          document.querySelectorAll('.event-tooltip').forEach(el => el.remove());
           drawEvents(this);
         },
       },
@@ -213,9 +313,6 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
       formatter: function () {
         const point = this.points?.[0];
         if (point) {
-          if (point.series.name === 'Event') {
-            return `<b>${point.series.options.custom?.eventTitle}</b><br>${point.series.options.custom?.eventDescription}`;
-          }
           return ReactDOMServer.renderToString(
             <ChartTooltip colorMode={colorMode} point={point} />
           );
@@ -270,102 +367,21 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
             : 'rgba(0, 0, 0, 0.3)',
         dashStyle: 'Dash',
       },
-    },
-  });
-
-  const drawEvents = (chart: Highcharts.Chart) => {
-    // Remove existing event elements
-    chart.renderer.boxWrapper.element.querySelectorAll('.event-element').forEach(el => el.remove());
-
-    const xAxis = chart.xAxis[0];
-    const yAxis = chart.yAxis[0];
-    const chartLeft = chart.plotLeft;
-    const chartRight = chart.plotLeft + chart.plotWidth;
-    const chartTop = chart.plotTop;
-    const chartBottom = chart.plotTop + chart.plotHeight;
-
-    events.forEach((event, index) => {
-      const xPos = xAxis.toPixels(event.date);
-      const yPos = yAxis.toPixels(yAxis.getExtremes().min);
-
-      if (xPos !== undefined && yPos !== undefined &&
-          xPos >= chartLeft && xPos <= chartRight &&
-          yPos >= chartTop && yPos <= chartBottom) {
-        const circle = chart.renderer
-          .circle(xPos, yPos, 10)
-          .attr({
-            fill: colorMode === 'dark' ? '#ffa500' : '#2563eb',
-            zIndex: 5,
-            class: 'event-element',
-          })
-          .css({
-            cursor: 'pointer',
-          })
-          .add();
-
-        chart.renderer
-          .text(event.title, xPos - 20, yPos + 20)
-          .attr({
-            zIndex: 5,
-            class: 'event-element',
-          })
-          .css({
-            color: colorMode === 'dark' ? '#e5e7eb' : '#111827',
-            fontSize: '10px',
-            cursor: 'pointer',
-          })
-          .add();
-
-        // Add click event to the circle
-        (circle.element as HTMLElement).onclick = () => {
-          // Toggle vertical line
-          const newActiveEventLines = [...activeEventLines];
-          const eventIndex = newActiveEventLines.indexOf(index);
-          if (eventIndex > -1) {
-            newActiveEventLines.splice(eventIndex, 1);
-          } else {
-            newActiveEventLines.push(index);
+      events: {
+        setExtremes: function (e: Highcharts.AxisSetExtremesEventObject) {
+          if (e.trigger === 'syncExtremes') return;
+          const chart = this.chart;
+          if (chart.yAxis[0].resetZoomButton) {
+            chart.yAxis[0].resetZoomButton.hide();
           }
-          setActiveEventLines(newActiveEventLines);
-        };
-
-        // Add hover event to the circle
-        (circle.element as HTMLElement).onmouseover = () => {
-          chart.tooltip.refresh([{
-            x: event.date,
-            y: 0,
-            series: {
-              name: 'Event',
-              options: {
-                custom: {
-                  eventTitle: event.title,
-                  eventDescription: event.description
-                }
-              }
-            } as any
-          } as Highcharts.Point]);
-        };
-
-        (circle.element as HTMLElement).onmouseout = () => {
-          chart.tooltip.hide();
-        };
-
-        // Draw vertical line if the event is active
-        if (activeEventLines.includes(index)) {
-          chart.renderer
-            .path(['M', xPos, chartTop, 'L', xPos, chartBottom])
-            .attr({
-              'stroke-width': 1,
-              stroke: colorMode === 'dark' ? '#e5e7eb' : '#4b5563',
-              dashstyle: 'shortdash',
-              zIndex: 4,
-              class: 'vertical-line event-element',
-            })
-            .add();
-        }
-      }
-    });
-  };
+        },
+        afterSetExtremes: function (e: Highcharts.AxisSetExtremesEventObject) {
+          const chart = this.chart;
+          drawEvents(chart);
+        },
+      },
+    },
+  }), [colorMode, selectedChartType, selectedStock, stockData, drawEvents]);
 
   const handleAddSeries = (stock: string) => {
     if (!selectedSeries.includes(stock)) {
