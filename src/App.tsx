@@ -1,0 +1,123 @@
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes, Link, useLocation, Navigate } from 'react-router-dom';
+import { Sun, Moon, BarChart2, Home as HomeIcon, Info, LogOut } from 'lucide-react';
+import FinancialChart from './components/FinancialChart';
+import Home from './components/Home';
+import About from './components/About';
+import Login from './components/Login';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import './styles/chart.css';
+
+function App() {
+  const [colorMode, setColorMode] = React.useState<'light' | 'dark'>('light');
+
+  const toggleColorMode = () => {
+    setColorMode(prev => prev === 'light' ? 'dark' : 'light');
+  };
+
+  return (
+    <AuthProvider>
+      <Router>
+        <AppContent colorMode={colorMode} toggleColorMode={toggleColorMode} />
+      </Router>
+    </AuthProvider>
+  );
+}
+
+function AppContent({ colorMode, toggleColorMode }: { colorMode: 'light' | 'dark', toggleColorMode: () => void }) {
+  const location = useLocation();
+  const { isAuthenticated, logout } = useAuth();
+
+  return (
+    <div className={`min-h-screen ${colorMode}`}>
+      <nav className={`${colorMode === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} shadow-md fixed top-0 left-0 right-0 z-10`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center">
+              <Link to="/" className="font-bold text-xl flex items-center">
+                <BarChart2 className="mr-2" /> FinApp
+              </Link>
+              <div className="ml-10 flex items-baseline space-x-4">
+                <NavLink to="/" active={location.pathname === "/"}>
+                  <HomeIcon className="w-5 h-5 mr-1" />
+                  Home
+                </NavLink>
+                {isAuthenticated && (
+                  <NavLink to="/chart" active={location.pathname === "/chart"}>
+                    <BarChart2 className="w-5 h-5 mr-1" />
+                    Financial Chart
+                  </NavLink>
+                )}
+                <NavLink to="/about" active={location.pathname === "/about"}>
+                  <Info className="w-5 h-5 mr-1" />
+                  About
+                </NavLink>
+              </div>
+            </div>
+            <div className="flex items-center">
+              {isAuthenticated ? (
+                <button
+                  onClick={logout}
+                  className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
+                    colorMode === 'dark' ? 'text-gray-300 hover:bg-gray-700 hover:text-white' : 'text-gray-700 hover:bg-gray-200 hover:text-gray-900'
+                  }`}
+                >
+                  <LogOut className="w-5 h-5 mr-1" />
+                  Logout
+                </button>
+              ) : (
+                <NavLink to="/login" active={location.pathname === "/login"}>
+                  Login
+                </NavLink>
+              )}
+              <button
+                onClick={toggleColorMode}
+                className={`ml-4 p-2 rounded-full ${colorMode === 'dark' ? 'bg-gray-700 text-yellow-400' : 'bg-gray-200 text-gray-800'}`}
+              >
+                {colorMode === 'dark' ? <Sun size={24} /> : <Moon size={24} />}
+              </button>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <main className={`${colorMode === 'dark' ? 'bg-gray-900 text-gray-100' : 'bg-gray-100 text-gray-900'} min-h-screen pt-16`}>
+        <Routes>
+          <Route path="/" element={<Home colorMode={colorMode} />} />
+          <Route
+            path="/chart"
+            element={
+              <ProtectedRoute>
+                <FinancialChart colorMode={colorMode} />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/about" element={<About colorMode={colorMode} />} />
+          <Route path="/login" element={<Login colorMode={colorMode} />} />
+        </Routes>
+      </main>
+    </div>
+  );
+}
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated } = useAuth();
+  return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
+}
+
+function NavLink({ to, children, active }: { to: string, children: React.ReactNode, active: boolean }) {
+  return (
+    <Link
+      to={to}
+      className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
+        active
+          ? 'bg-gray-900 text-white'
+          : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+      }`}
+    >
+      {children}
+    </Link>
+  );
+}
+
+export default App;
