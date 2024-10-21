@@ -193,7 +193,7 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
         };
 
         // Add hover event to the circle
-        (circle.element as HTMLElement).onmouseover = () => {
+        (circle.element as HTMLElement).onmouseover = (e: MouseEvent) => {
           const tooltipContainer = document.createElement('div');
           tooltipContainer.className = `event-tooltip ${colorMode === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} p-2 rounded shadow-lg`;
           tooltipContainer.style.position = 'absolute';
@@ -202,14 +202,26 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
             <h3 class="font-bold">${event.title}</h3>
             <p>${event.description}</p>
           `;
-          var xPosTooltip = xPos + 800 * (chart.chartWidth / window.screen.width);
-          if (xPosTooltip + tooltipContainer.clientWidth > chart.plotWidth) {
-            xPosTooltip = xPosTooltip - tooltipContainer.clientWidth - 10;
+
+          // Calculate position
+          const chartRect = chart.container.getBoundingClientRect();
+          let left = e.clientX - chartRect.left + 10;
+          let top = e.clientY - chartRect.top + 10;
+
+          // Adjust position if it goes beyond the right edge of the plot area
+          if (left + 200 > chart.plotWidth) {
+            left = Math.max(0, chart.plotWidth - 200);
           }
 
-          tooltipContainer.style.left = `${xPosTooltip}px`;
-          tooltipContainer.style.top = `${yPos + 100}px`;
-          document.body.appendChild(tooltipContainer);
+          // Adjust position if it goes beyond the bottom edge of the plot area
+          if (top + tooltipContainer.offsetHeight > chart.plotHeight) {
+            top = Math.max(0, chart.plotHeight - tooltipContainer.offsetHeight);
+          }
+
+          tooltipContainer.style.left = `${left}px`;
+          tooltipContainer.style.top = `${top}px`;
+
+          chart.container.appendChild(tooltipContainer);
         };
 
         (circle.element as HTMLElement).onmouseout = () => {
@@ -401,15 +413,6 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
         dashStyle: 'Dash',
       },
       events: {
-        setExtremes: function (e: Highcharts.AxisSetExtremesEventObject) {
-          console.log(e);
-          if (e.trigger === 'syncExtremes') return;
-          const chart = this.chart;
-          if (chart.yAxis[0].resetZoomButton) {
-            chart.yAxis[0].resetZoomButton.hide();
-          }
-          return;
-        },
         afterSetExtremes: function (e: Highcharts.AxisSetExtremesEventObject) {
           const chart = this.chart;
           drawEvents(chart);
