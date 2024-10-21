@@ -55,6 +55,7 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
   const [backtestSeries, setBacktestSeries] = useState('BTCUSDT');
   const [isBacktestRunning, setIsBacktestRunning] = useState(false);
   const [events, setEvents] = useState<Event[]>(dummyEvents);
+  const [activeEventLines, setActiveEventLines] = useState<number[]>([]);
   const chartRef = useRef<HighchartsReact.RefObject>(null);
 
   const timeGranularities = [
@@ -212,6 +213,9 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
       formatter: function () {
         const point = this.points?.[0];
         if (point) {
+          if (point.series.name === 'Event') {
+            return `<b>${point.series.options.custom?.eventTitle}</b><br>${point.series.options.custom?.eventDescription}`;
+          }
           return ReactDOMServer.renderToString(
             <ChartTooltip colorMode={colorMode} point={point} />
           );
@@ -280,7 +284,7 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
     const chartTop = chart.plotTop;
     const chartBottom = chart.plotTop + chart.plotHeight;
 
-    events.forEach((event) => {
+    events.forEach((event, index) => {
       const xPos = xAxis.toPixels(event.date);
       const yPos = yAxis.toPixels(yAxis.getExtremes().min);
 
@@ -315,21 +319,14 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
         // Add click event to the circle
         (circle.element as HTMLElement).onclick = () => {
           // Toggle vertical line
-          const existingLine = chart.renderer.boxWrapper.element.querySelector('.vertical-line');
-          if (existingLine) {
-            existingLine.remove();
+          const newActiveEventLines = [...activeEventLines];
+          const eventIndex = newActiveEventLines.indexOf(index);
+          if (eventIndex > -1) {
+            newActiveEventLines.splice(eventIndex, 1);
           } else {
-            chart.renderer
-              .path(['M', xPos, chartTop, 'L', xPos, chartBottom])
-              .attr({
-                'stroke-width': 1,
-                stroke: colorMode === 'dark' ? '#e5e7eb' : '#4b5563',
-                dashstyle: 'shortdash',
-                zIndex: 4,
-                class: 'vertical-line event-element',
-              })
-              .add();
+            newActiveEventLines.push(index);
           }
+          setActiveEventLines(newActiveEventLines);
         };
 
         // Add hover event to the circle
@@ -341,6 +338,7 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
               name: 'Event',
               options: {
                 custom: {
+                  eventTitle: event.title,
                   eventDescription: event.description
                 }
               }
@@ -351,6 +349,20 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
         (circle.element as HTMLElement).onmouseout = () => {
           chart.tooltip.hide();
         };
+
+        // Draw vertical line if the event is active
+        if (activeEventLines.includes(index)) {
+          chart.renderer
+            .path(['M', xPos, chartTop, 'L', xPos, chartBottom])
+            .attr({
+              'stroke-width': 1,
+              stroke: colorMode === 'dark' ? '#e5e7eb' : '#4b5563',
+              dashstyle: 'shortdash',
+              zIndex: 4,
+              class: 'vertical-line event-element',
+            })
+            .add();
+        }
       }
     });
   };
