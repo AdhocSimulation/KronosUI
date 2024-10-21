@@ -247,6 +247,7 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
       },
     },
     rangeSelector: {
+      enabled: false,
       selected: 1,
       inputStyle: {
         color: colorMode === 'dark' ? '#e5e7eb' : '#111827',
@@ -369,11 +370,13 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
       },
       events: {
         setExtremes: function (e: Highcharts.AxisSetExtremesEventObject) {
+          console.log(e);
           if (e.trigger === 'syncExtremes') return;
           const chart = this.chart;
           if (chart.yAxis[0].resetZoomButton) {
             chart.yAxis[0].resetZoomButton.hide();
           }
+          return;
         },
         afterSetExtremes: function (e: Highcharts.AxisSetExtremesEventObject) {
           const chart = this.chart;
