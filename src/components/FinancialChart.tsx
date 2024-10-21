@@ -197,13 +197,18 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
           const tooltipContainer = document.createElement('div');
           tooltipContainer.className = `event-tooltip ${colorMode === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} p-2 rounded shadow-lg`;
           tooltipContainer.style.position = 'absolute';
-          tooltipContainer.style.left = `${xPos + 15}px`;
-          tooltipContainer.style.top = `${yPos - 15}px`;
           tooltipContainer.style.zIndex = '1000';
           tooltipContainer.innerHTML = `
             <h3 class="font-bold">${event.title}</h3>
             <p>${event.description}</p>
           `;
+          var xPosTooltip = xPos + 800 * (chart.chartWidth / window.screen.width);
+          if (xPosTooltip + tooltipContainer.clientWidth > chart.plotWidth) {
+            xPosTooltip = xPosTooltip - tooltipContainer.clientWidth - 10;
+          }
+
+          tooltipContainer.style.left = `${xPosTooltip}px`;
+          tooltipContainer.style.top = `${yPos + 100}px`;
           document.body.appendChild(tooltipContainer);
         };
 
@@ -230,6 +235,33 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
       }
     });
   }, [events, colorMode, activeEventLines]);
+
+  const getInitialRange = useCallback(() => {
+    const now = Date.now();
+    switch (selectedGranularity) {
+      case '1min':
+      case '5min':
+      case '15min':
+        return { min: now - 24 * 60 * 60 * 1000, max: now }; // Last 24 hours
+      case '30min':
+      case '60min':
+        return { min: now - 72 * 60 * 60 * 1000, max: now }; // Last 72 hours
+      case 'daily':
+        return { min: now - 30 * 24 * 60 * 60 * 1000, max: now }; // Last month
+      default:
+        return { min: now - 30 * 24 * 60 * 60 * 1000, max: now }; // Default to last month
+    }
+  }, [selectedGranularity]);
+
+  const [chartExtremes, setChartExtremes] = useState(getInitialRange());
+
+  useEffect(() => {
+    const newExtremes = getInitialRange();
+    setChartExtremes(newExtremes);
+    if (chartRef.current && chartRef.current.chart) {
+      chartRef.current.chart.xAxis[0].setExtremes(newExtremes.min, newExtremes.max, true, false);
+    }
+  }, [selectedGranularity, getInitialRange]);
 
   const getChartOptions = useCallback((): Highcharts.Options => ({
     chart: {
@@ -383,8 +415,10 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
           drawEvents(chart);
         },
       },
+      min: chartExtremes.min,
+      max: chartExtremes.max,
     },
-  }), [colorMode, selectedChartType, selectedStock, stockData, drawEvents]);
+  }), [colorMode, selectedChartType, selectedStock, stockData, drawEvents, chartExtremes]);
 
   const handleAddSeries = (stock: string) => {
     if (!selectedSeries.includes(stock)) {
