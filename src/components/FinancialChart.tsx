@@ -324,6 +324,17 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
           x: -3,
           style: { color: colorMode === 'dark' ? '#e5e7eb' : '#111827' },
         },
+        crosshair: {
+          label: {
+            enabled: true,
+            format: '{value:.2f}'
+          },
+          color:
+            colorMode === 'dark'
+              ? 'rgba(216,128,56,0.9)'
+              : 'rgba(0, 0, 0, 0.3)',
+          dashStyle: 'Dash',
+        },
         title: {
           text: 'OHLC',
           style: { color: colorMode === 'dark' ? '#e5e7eb' : '#111827' },
@@ -392,7 +403,7 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
         yAxis: 1,
         color:
           colorMode === 'dark'
-            ? 'rgba(255, 165, 0, 0.5)'
+            ? 'rgba(255, 165, 0, 0.8)'
             : 'rgba(37, 99, 235, 0.5)',
       },
     ],
@@ -408,7 +419,7 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
         },
         color:
           colorMode === 'dark'
-            ? 'rgba(255, 255, 255, 0.3)'
+            ? 'rgba(255, 150, 150, 0.7)'
             : 'rgba(0, 0, 0, 0.3)',
         dashStyle: 'Dash',
       },
