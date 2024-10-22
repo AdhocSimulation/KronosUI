@@ -2,12 +2,12 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Highcharts from 'highcharts/highstock';
 import HighchartsReact from 'highcharts-react-official';
 import axios from 'axios';
-import { BarChart, CandlestickChart, LineChart, X } from 'lucide-react';
+import { BarChart, CandlestickChart, LineChart } from 'lucide-react';
 import ChartTooltip from './ChartTooltip';
 import ReactDOMServer from 'react-dom/server';
-import { runBacktest, cancelBacktest } from '../services/backtestService';
 import ChartWithControls from './ChartWithControls';
-import BacktestControls from './BacktestControls';
+import ChartSection from './ChartSection';
+import AlertsSection from './AlertsSection';
 
 interface FinancialChartProps {
   colorMode: 'light' | 'dark';
@@ -28,6 +28,11 @@ interface Event {
   description: string;
 }
 
+interface StrategyData {
+  date: number;
+  value: number;
+}
+
 const stocks = ['AAPL', 'GOOGL', 'MSFT', 'AMZN'];
 
 const dummyEvents: Event[] = [
@@ -45,11 +50,10 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
   const [isIndicatorsPopupOpen, setIsIndicatorsPopupOpen] = useState(false);
   const [selectedChartType, setSelectedChartType] = useState('candlestick');
   const [selectedGranularity, setSelectedGranularity] = useState('daily');
-  const [backtestWindowSize, setBacktestWindowSize] = useState(30);
-  const [backtestSeries, setBacktestSeries] = useState('BTCUSDT');
-  const [isBacktestRunning, setIsBacktestRunning] = useState(false);
   const [events, setEvents] = useState<Event[]>(dummyEvents);
   const [activeEventLines, setActiveEventLines] = useState<Set<number>>(new Set());
+  const [selectedStrategies, setSelectedStrategies] = useState<string[]>([]);
+  const [strategyData, setStrategyData] = useState<{ [key: string]: StrategyData[] }>({});
   const chartRef = useRef<HighchartsReact.RefObject>(null);
 
   const timeGranularities = [
@@ -72,6 +76,12 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
   useEffect(() => {
     fetchStockData(selectedStock);
   }, [selectedStock, selectedGranularity]);
+
+  useEffect(() => {
+    if (selectedStrategies.length > 0) {
+      generateStrategyData();
+    }
+  }, [selectedStrategies, stockData]);
 
   const fetchStockData = async (stock: string) => {
     try {
@@ -125,6 +135,17 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
     }
 
     return data;
+  };
+
+  const generateStrategyData = () => {
+    const newStrategyData: { [key: string]: StrategyData[] } = {};
+    selectedStrategies.forEach(strategy => {
+      newStrategyData[strategy] = stockData.map(data => ({
+        date: data.date,
+        value: Math.random() * 2 - 1 // Random value between -1 and 1
+      }));
+    });
+    setStrategyData(newStrategyData);
   };
 
   const drawEvents = useCallback((chart: Highcharts.Chart) => {
@@ -284,7 +305,6 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
           drawEvents(this);
         },
         redraw: function (this: Highcharts.Chart) {
-          // Remove all tooltips before redrawing
           document.querySelectorAll('.event-tooltip').forEach(el => el.remove());
           drawEvents(this);
         },
@@ -324,22 +344,11 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
           x: -3,
           style: { color: colorMode === 'dark' ? '#e5e7eb' : '#111827' },
         },
-        crosshair: {
-          label: {
-            enabled: true,
-            format: '{value:.2f}'
-          },
-          color:
-            colorMode === 'dark'
-              ? 'rgba(216,128,56,0.9)'
-              : 'rgba(0, 0, 0, 0.3)',
-          dashStyle: 'Dash',
-        },
         title: {
           text: 'OHLC',
           style: { color: colorMode === 'dark' ? '#e5e7eb' : '#111827' },
         },
-        height: '85%',
+        height: '60%',
         lineWidth: 2,
         resize: {
           enabled: true,
@@ -355,30 +364,53 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
           text: 'Volume',
           style: { color: colorMode === 'dark' ? '#e5e7eb' : '#111827' },
         },
-        top: '85%',
-        height: '15%',
+        top: '60%',
+        height: '20%',
         offset: 0,
         lineWidth: 2,
+      },
+      {
+        labels: {
+          align: 'right',
+          x: -3,
+          style: { color: colorMode === 'dark' ? '#e5e7eb' : '#111827' },
+        },
+        title: {
+          text: 'Strategies',
+          style: { color: colorMode === 'dark' ? '#e5e7eb' : '#111827' },
+        },
+        top: '80%',
+        height: '20%',
+        offset: 0,
+        lineWidth: 2,
+        min: -1,
+        max: 1,
       },
     ],
     tooltip: {
       enabled: false,
-      split: false,
+      split: true,
+
       shared: true,
       backgroundColor: colorMode === 'dark' ? '#374151' : '#ffffff',
       useHTML: true,
-      formatter: function () {
-        const point = this.points?.[0];
-        if (point) {
-          return ReactDOMServer.renderToString(
-            <ChartTooltip colorMode={colorMode} point={point} />
-          );
-        }
-        return '';
-      },
+      // formatter: function () {
+      //   const point = this.points?.[0];
+      //   if (point) {
+      //     return ReactDOMServer.renderToString(
+      //       <ChartTooltip colorMode={colorMode} point={point} />
+      //     );
+      //   }
+      //   return '';
+      // },
     },
     plotOptions: {
       series: {
+        states: {
+          inactive: {
+            opacity: 1
+          }
+        },
         dataLabels: {
           style: { color: colorMode === 'dark' ? '#e5e7eb' : '#111827' },
         },
@@ -402,11 +434,15 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
         name: 'Volume',
         data: stockData.map((d) => [d.date, d.volume]),
         yAxis: 1,
-        color:
-          colorMode === 'dark'
-            ? 'rgba(255, 165, 0, 0.8)'
-            : 'rgba(37, 99, 235, 0.5)',
+        color: colorMode === 'dark' ? 'rgba(255, 165, 0, 0.8)' : 'rgba(37, 99, 235, 0.5)',
       },
+      ...Object.entries(strategyData).map(([strategy, data], index) => ({
+        type: 'line',
+        name: strategy,
+        data: data.map((d) => [d.date, d.value]),
+        yAxis: 2,
+        color: `hsl(${index * 60}, 70%, 50%)`,
+      })),
     ],
     xAxis: {
       type: 'datetime',
@@ -433,7 +469,7 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
       min: chartExtremes.min,
       max: chartExtremes.max,
     },
-  }), [colorMode, selectedChartType, selectedStock, stockData, drawEvents, chartExtremes]);
+  }), [colorMode, selectedChartType, selectedStock, stockData, drawEvents, chartExtremes, strategyData]);
 
   const handleAddSeries = (stock: string) => {
     if (!selectedSeries.includes(stock)) {
@@ -454,87 +490,17 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
     }
   };
 
-  const handleRunBacktest = async () => {
-    setIsBacktestRunning(true);
-    try {
-      const result = await runBacktest(backtestWindowSize, backtestSeries);
-      console.log('Backtest result:', result);
-      // Handle the backtest result (e.g., display it on the chart or in a separate component)
-    } catch (error) {
-      console.error('Error running backtest:', error);
-    } finally {
-      setIsBacktestRunning(false);
-    }
-  };
-
-  const handleCancelBacktest = async () => {
-    try {
-      await cancelBacktest();
-      setIsBacktestRunning(false);
-    } catch (error) {
-      console.error('Error canceling backtest:', error);
-    }
+  const handleStrategyChange = (strategies: string[]) => {
+    setSelectedStrategies(strategies);
   };
 
   return (
-    <div
-      className={`w-full ${
-        colorMode === 'dark'
-          ? 'bg-gray-900 text-white'
-          : 'bg-gray-100 text-gray-800'
-      }`}
-    >
+    <div className={`w-full ${colorMode === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-800'}`}>
       <div className="flex">
-        {/* Left Panel - Controls */}
+        {/* Left Panel - Chart and Alerts */}
         <div className="w-1/4 p-4">
-          <div className="space-y-4">
-            {/* Data Series Selection */}
-            <div>
-              <h3 className="font-bold mb-2">Selected Series</h3>
-              <ul className="space-y-2">
-                {selectedSeries.map((series) => (
-                  <li
-                    key={series}
-                    className="flex items-center justify-between"
-                  >
-                    <span>{series}</span>
-                    <button
-                      onClick={() => handleRemoveSeries(series)}
-                      className={`p-1 rounded ${
-                        colorMode === 'dark'
-                          ? 'bg-orange-600 hover:bg-orange-700'
-                          : 'bg-blue-500 hover:bg-blue-600'
-                      } text-white`}
-                    >
-                      <X size={16} />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-              <button
-                onClick={() => setIsAddSeriesPopupOpen(true)}
-                className={`mt-2 w-full py-2 px-4 rounded ${
-                  colorMode === 'dark'
-                    ? 'bg-orange-600 hover:bg-orange-700'
-                    : 'bg-blue-500 hover:bg-blue-600'
-                } text-white`}
-              >
-                Add Series
-              </button>
-            </div>
-
-            {/* Backtest Controls */}
-            <BacktestControls
-              colorMode={colorMode}
-              backtestWindowSize={backtestWindowSize}
-              setBacktestWindowSize={setBacktestWindowSize}
-              backtestSeries={backtestSeries}
-              setBacktestSeries={setBacktestSeries}
-              isBacktestRunning={isBacktestRunning}
-              handleRunBacktest={handleRunBacktest}
-              handleCancelBacktest={handleCancelBacktest}
-            /> 
-          </div>
+          <ChartSection colorMode={colorMode} onStrategyChange={handleStrategyChange} />
+          <AlertsSection colorMode={colorMode} />
         </div>
 
         {/* Right Panel - Chart */}
