@@ -362,6 +362,7 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
       },
     ],
     tooltip: {
+      enabled: false,
       split: false,
       shared: true,
       backgroundColor: colorMode === 'dark' ? '#374151' : '#ffffff',
