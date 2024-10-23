@@ -7,6 +7,7 @@ import About from './components/About';
 import Login from './components/Login';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import './styles/chart.css';
+import Portfolio from './components/Portfolio/Portfolio';
 
 function App() {
   const [colorMode, setColorMode] = React.useState<'light' | 'dark'>('light');
@@ -100,7 +101,7 @@ function AppContent({ colorMode, toggleColorMode }: { colorMode: 'light' | 'dark
             path="/portfolios"
             element={
               <ProtectedRoute>
-                <div>Portfolios content</div>
+                <Portfolio colorMode={colorMode} />
               </ProtectedRoute>
             }
           />
