@@ -63,7 +63,7 @@ const ChartWithControls: React.FC<ChartWithControlsProps> = ({
           setSelectedChartType={setSelectedChartType}
         />
       </div>
-      <div className="px-6">
+      <div className="px-4">
         <ChartSeriesSummary
           colorMode={colorMode}
           selectedSeries={selectedSeries[0]}

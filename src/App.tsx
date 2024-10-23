@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes, Link, useLocation, Navigate } from 'react-router-dom';
-import { Sun, Moon, BarChart2, Home as HomeIcon, Info, LogOut } from 'lucide-react';
+import { Sun, Moon, BarChart2, Home as HomeIcon, Info, LogOut, Briefcase, Code, LayoutDashboard, Activity } from 'lucide-react';
 import FinancialChart from './components/FinancialChart';
 import Home from './components/Home';
 import About from './components/About';
@@ -28,6 +28,16 @@ function AppContent({ colorMode, toggleColorMode }: { colorMode: 'light' | 'dark
   const location = useLocation();
   const { isAuthenticated, logout } = useAuth();
 
+  const menuItems = [
+    { path: '/', label: 'Home', icon: HomeIcon },
+    { path: '/chart', label: 'Financial Chart', icon: BarChart2, requireAuth: true },
+    { path: '/portfolios', label: 'Portfolios', icon: Briefcase, requireAuth: true },
+    { path: '/strategy-builder', label: 'Strategy Builder', icon: Code, requireAuth: true },
+    { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, requireAuth: true },
+    { path: '/monitoring', label: 'Monitoring', icon: Activity, requireAuth: true },
+    { path: '/about', label: 'About', icon: Info },
+  ];
+
   return (
     <div className={`min-h-screen ${colorMode}`}>
       <nav className={`${colorMode === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} shadow-md fixed top-0 left-0 right-0 z-10`}>
@@ -38,20 +48,14 @@ function AppContent({ colorMode, toggleColorMode }: { colorMode: 'light' | 'dark
                 <BarChart2 className="mr-2" /> FinApp
               </Link>
               <div className="ml-10 flex items-baseline space-x-4">
-                <NavLink to="/" active={location.pathname === "/"}>
-                  <HomeIcon className="w-5 h-5 mr-1" />
-                  Home
-                </NavLink>
-                {isAuthenticated && (
-                  <NavLink to="/chart" active={location.pathname === "/chart"}>
-                    <BarChart2 className="w-5 h-5 mr-1" />
-                    Financial Chart
-                  </NavLink>
-                )}
-                <NavLink to="/about" active={location.pathname === "/about"}>
-                  <Info className="w-5 h-5 mr-1" />
-                  About
-                </NavLink>
+                {menuItems.map((item) => (
+                  (!item.requireAuth || isAuthenticated) && (
+                    <NavLink key={item.path} to={item.path} active={location.pathname === item.path}>
+                      <item.icon className="w-5 h-5 mr-1" />
+                      {item.label}
+                    </NavLink>
+                  )
+                ))}
               </div>
             </div>
             <div className="flex items-center">
@@ -89,6 +93,38 @@ function AppContent({ colorMode, toggleColorMode }: { colorMode: 'light' | 'dark
             element={
               <ProtectedRoute>
                 <FinancialChart colorMode={colorMode} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/portfolios"
+            element={
+              <ProtectedRoute>
+                <div>Portfolios content</div>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/strategy-builder"
+            element={
+              <ProtectedRoute>
+                <div>Strategy Builder content</div>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <div>Dashboard content</div>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/monitoring"
+            element={
+              <ProtectedRoute>
+                <div>Monitoring content</div>
               </ProtectedRoute>
             }
           />

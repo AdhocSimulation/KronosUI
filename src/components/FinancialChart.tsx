@@ -1,19 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Highcharts from 'highcharts/highstock';
 import HighchartsReact from 'highcharts-react-official';
 import axios from 'axios';
-import {
-  ChevronDown,
-  X,
-  BarChart,
-  CandlestickChart,
-  LineChart,
-} from 'lucide-react';
+import { BarChart, CandlestickChart, LineChart } from 'lucide-react';
 import ChartTooltip from './ChartTooltip';
 import ReactDOMServer from 'react-dom/server';
-import { runBacktest, cancelBacktest } from '../services/backtestService';
 import ChartWithControls from './ChartWithControls';
-import BacktestControls from './BacktestControls';
+import ChartSection from './ChartSection';
+import AlertsSection from './AlertsSection';
 
 interface FinancialChartProps {
   colorMode: 'light' | 'dark';
@@ -34,6 +28,11 @@ interface Event {
   description: string;
 }
 
+interface StrategyData {
+  date: number;
+  value: number;
+}
+
 const stocks = ['AAPL', 'GOOGL', 'MSFT', 'AMZN'];
 
 const dummyEvents: Event[] = [
@@ -51,10 +50,10 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
   const [isIndicatorsPopupOpen, setIsIndicatorsPopupOpen] = useState(false);
   const [selectedChartType, setSelectedChartType] = useState('candlestick');
   const [selectedGranularity, setSelectedGranularity] = useState('daily');
-  const [backtestWindowSize, setBacktestWindowSize] = useState(30);
-  const [backtestSeries, setBacktestSeries] = useState('BTCUSDT');
-  const [isBacktestRunning, setIsBacktestRunning] = useState(false);
   const [events, setEvents] = useState<Event[]>(dummyEvents);
+  const [activeEventLines, setActiveEventLines] = useState<Set<number>>(new Set());
+  const [selectedStrategies, setSelectedStrategies] = useState<string[]>([]);
+  const [strategyData, setStrategyData] = useState<{ [key: string]: StrategyData[] }>({});
   const chartRef = useRef<HighchartsReact.RefObject>(null);
 
   const timeGranularities = [
@@ -77,6 +76,12 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
   useEffect(() => {
     fetchStockData(selectedStock);
   }, [selectedStock, selectedGranularity]);
+
+  useEffect(() => {
+    if (selectedStrategies.length > 0) {
+      generateStrategyData();
+    }
+  }, [selectedStrategies, stockData]);
 
   const fetchStockData = async (stock: string) => {
     try {
@@ -132,144 +137,18 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
     return data;
   };
 
-  const getChartOptions = (): Highcharts.Options => ({
-    chart: {
-      backgroundColor: colorMode === 'dark' ? '#1f2937' : '#ffffff',
-      height: '80%',
-      events: {
-        load: function (this: Highcharts.Chart) {
-          drawEvents(this);
-        },
-        redraw: function (this: Highcharts.Chart) {
-          drawEvents(this);
-        },
-      },
-    },
-    rangeSelector: {
-      selected: 1,
-      inputStyle: {
-        color: colorMode === 'dark' ? '#e5e7eb' : '#111827',
-      },
-      labelStyle: {
-        color: colorMode === 'dark' ? '#e5e7eb' : '#111827',
-      },
-      buttonTheme: {
-        fill: colorMode === 'dark' ? '#374151' : '#f3f4f6',
-        style: {
-          color: colorMode === 'dark' ? '#e5e7eb' : '#111827',
-        },
-        states: {
-          hover: {
-            fill: colorMode === 'dark' ? '#4b5563' : '#e5e7eb',
-          },
-          select: {
-            fill: colorMode === 'dark' ? '#6b7280' : '#d1d5db',
-            style: {
-              color: colorMode === 'dark' ? '#ffffff' : '#000000',
-            },
-          },
-        },
-      },
-    },
-    yAxis: [
-      {
-        labels: {
-          align: 'right',
-          x: -3,
-          style: { color: colorMode === 'dark' ? '#e5e7eb' : '#111827' },
-        },
-        title: {
-          text: 'OHLC',
-          style: { color: colorMode === 'dark' ? '#e5e7eb' : '#111827' },
-        },
-        height: '85%',
-        lineWidth: 2,
-        resize: {
-          enabled: true,
-        },
-      },
-      {
-        labels: {
-          align: 'right',
-          x: -3,
-          style: { color: colorMode === 'dark' ? '#e5e7eb' : '#111827' },
-        },
-        title: {
-          text: 'Volume',
-          style: { color: colorMode === 'dark' ? '#e5e7eb' : '#111827' },
-        },
-        top: '85%',
-        height: '15%',
-        offset: 0,
-        lineWidth: 2,
-      },
-    ],
-    tooltip: {
-      split: false,
-      shared: true,
-      backgroundColor: colorMode === 'dark' ? '#374151' : '#ffffff',
-      useHTML: true,
-      formatter: function () {
-        const point = this.points?.[0];
-        if (point) {
-          return ReactDOMServer.renderToString(
-            <ChartTooltip colorMode={colorMode} point={point} />
-          );
-        }
-        return '';
-      },
-    },
-    plotOptions: {
-      series: {
-        dataLabels: {
-          style: { color: colorMode === 'dark' ? '#e5e7eb' : '#111827' },
-        },
-      },
-      candlestick: {
-        color: '#ef4444',
-        upColor: '#22c55e',
-      },
-    },
-    series: [
-      {
-        type: selectedChartType as any,
-        name: selectedStock,
-        data: stockData.map((d) => [d.date, d.open, d.high, d.low, d.close]),
-        id: 'main',
-        color: '#ef4444',
-        upColor: '#22c55e',
-      },
-      {
-        type: 'column',
-        name: 'Volume',
-        data: stockData.map((d) => [d.date, d.volume]),
-        yAxis: 1,
-        color:
-          colorMode === 'dark'
-            ? 'rgba(255, 165, 0, 0.5)'
-            : 'rgba(37, 99, 235, 0.5)',
-      },
-    ],
-    xAxis: {
-      type: 'datetime',
-      labels: {
-        style: { color: colorMode === 'dark' ? '#e5e7eb' : '#111827' },
-      },
-      crosshair: {
-        label: {
-          enabled: true,
-          format: '{value:%Y-%m-%d}',
-        },
-        color:
-          colorMode === 'dark'
-            ? 'rgba(255, 255, 255, 0.3)'
-            : 'rgba(0, 0, 0, 0.3)',
-        dashStyle: 'Dash',
-      },
-    },
-  });
+  const generateStrategyData = () => {
+    const newStrategyData: { [key: string]: StrategyData[] } = {};
+    selectedStrategies.forEach(strategy => {
+      newStrategyData[strategy] = stockData.map(data => ({
+        date: data.date,
+        value: Math.random() * 2 - 1 // Random value between -1 and 1
+      }));
+    });
+    setStrategyData(newStrategyData);
+  };
 
-  const drawEvents = (chart: Highcharts.Chart) => {
+  const drawEvents = useCallback((chart: Highcharts.Chart) => {
     // Remove existing event elements
     chart.renderer.boxWrapper.element.querySelectorAll('.event-element').forEach(el => el.remove());
 
@@ -315,10 +194,11 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
         // Add click event to the circle
         (circle.element as HTMLElement).onclick = () => {
           // Toggle vertical line
-          const existingLine = chart.renderer.boxWrapper.element.querySelector('.vertical-line');
-          if (existingLine) {
-            existingLine.remove();
+          if (activeEventLines.has(event.date)) {
+            activeEventLines.delete(event.date);
+            chart.renderer.boxWrapper.element.querySelector(`.vertical-line-${event.date}`)?.remove();
           } else {
+            activeEventLines.add(event.date);
             chart.renderer
               .path(['M', xPos, chartTop, 'L', xPos, chartBottom])
               .attr({
@@ -326,34 +206,270 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
                 stroke: colorMode === 'dark' ? '#e5e7eb' : '#4b5563',
                 dashstyle: 'shortdash',
                 zIndex: 4,
-                class: 'vertical-line event-element',
+                class: `vertical-line-${event.date} event-element`,
               })
               .add();
           }
+          setActiveEventLines(new Set(activeEventLines));
         };
 
         // Add hover event to the circle
-        (circle.element as HTMLElement).onmouseover = () => {
-          chart.tooltip.refresh([{
-            x: event.date,
-            y: 0,
-            series: {
-              name: 'Event',
-              options: {
-                custom: {
-                  eventDescription: event.description
-                }
-              }
-            } as any
-          } as Highcharts.Point]);
+        (circle.element as HTMLElement).onmouseover = (e: MouseEvent) => {
+          const tooltipContainer = document.createElement('div');
+          tooltipContainer.className = `event-tooltip ${colorMode === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} p-2 rounded shadow-lg`;
+          tooltipContainer.style.position = 'absolute';
+          tooltipContainer.style.zIndex = '1000';
+          tooltipContainer.innerHTML = `
+            <h3 class="font-bold">${event.title}</h3>
+            <p>${event.description}</p>
+          `;
+
+          // Calculate position
+          const chartRect = chart.container.getBoundingClientRect();
+          let left = e.clientX - chartRect.left + 10;
+          let top = e.clientY - chartRect.top + 10;
+
+          // Adjust position if it goes beyond the right edge of the plot area
+          if (left + 200 > chart.plotWidth) {
+            left = Math.max(0, chart.plotWidth - 200);
+          }
+
+          // Adjust position if it goes beyond the bottom edge of the plot area
+          if (top + tooltipContainer.offsetHeight > chart.plotHeight) {
+            top = Math.max(0, chart.plotHeight - tooltipContainer.offsetHeight);
+          }
+
+          tooltipContainer.style.left = `${left}px`;
+          tooltipContainer.style.top = `${top}px`;
+
+          chart.container.appendChild(tooltipContainer);
         };
 
         (circle.element as HTMLElement).onmouseout = () => {
-          chart.tooltip.hide();
+          const tooltipContainer = document.querySelector('.event-tooltip');
+          if (tooltipContainer) {
+            tooltipContainer.remove();
+          }
         };
+
+        // Redraw active event lines
+        if (activeEventLines.has(event.date)) {
+          chart.renderer
+            .path(['M', xPos, chartTop, 'L', xPos, chartBottom])
+            .attr({
+              'stroke-width': 1,
+              stroke: colorMode === 'dark' ? '#e5e7eb' : '#4b5563',
+              dashstyle: 'shortdash',
+              zIndex: 4,
+              class: `vertical-line-${event.date} event-element`,
+            })
+            .add();
+        }
       }
     });
-  };
+  }, [events, colorMode, activeEventLines]);
+
+  const getInitialRange = useCallback(() => {
+    const now = Date.now();
+    switch (selectedGranularity) {
+      case '1min':
+      case '5min':
+      case '15min':
+        return { min: now - 24 * 60 * 60 * 1000, max: now }; // Last 24 hours
+      case '30min':
+      case '60min':
+        return { min: now - 72 * 60 * 60 * 1000, max: now }; // Last 72 hours
+      case 'daily':
+        return { min: now - 30 * 24 * 60 * 60 * 1000, max: now }; // Last month
+      default:
+        return { min: now - 30 * 24 * 60 * 60 * 1000, max: now }; // Default to last month
+    }
+  }, [selectedGranularity]);
+
+  const [chartExtremes, setChartExtremes] = useState(getInitialRange());
+
+  useEffect(() => {
+    const newExtremes = getInitialRange();
+    setChartExtremes(newExtremes);
+    if (chartRef.current && chartRef.current.chart) {
+      chartRef.current.chart.xAxis[0].setExtremes(newExtremes.min, newExtremes.max, true, false);
+    }
+  }, [selectedGranularity, getInitialRange]);
+
+  const getChartOptions = useCallback((): Highcharts.Options => ({
+    chart: {
+      backgroundColor: colorMode === 'dark' ? '#1f2937' : '#ffffff',
+      height: '80%',
+      events: {
+        load: function (this: Highcharts.Chart) {
+          drawEvents(this);
+        },
+        redraw: function (this: Highcharts.Chart) {
+          document.querySelectorAll('.event-tooltip').forEach(el => el.remove());
+          drawEvents(this);
+        },
+      },
+    },
+    rangeSelector: {
+      enabled: false,
+      selected: 1,
+      inputStyle: {
+        color: colorMode === 'dark' ? '#e5e7eb' : '#111827',
+      },
+      labelStyle: {
+        color: colorMode === 'dark' ? '#e5e7eb' : '#111827',
+      },
+      buttonTheme: {
+        fill: colorMode === 'dark' ? '#374151' : '#f3f4f6',
+        style: {
+          color: colorMode === 'dark' ? '#e5e7eb' : '#111827',
+        },
+        states: {
+          hover: {
+            fill: colorMode === 'dark' ? '#4b5563' : '#e5e7eb',
+          },
+          select: {
+            fill: colorMode === 'dark' ? '#6b7280' : '#d1d5db',
+            style: {
+              color: colorMode === 'dark' ? '#ffffff' : '#000000',
+            },
+          },
+        },
+      },
+    },
+    yAxis: [
+      {
+        labels: {
+          align: 'right',
+          x: -3,
+          style: { color: colorMode === 'dark' ? '#e5e7eb' : '#111827' },
+        },
+        title: {
+          text: 'OHLC',
+          style: { color: colorMode === 'dark' ? '#e5e7eb' : '#111827' },
+        },
+        height: '60%',
+        lineWidth: 2,
+        resize: {
+          enabled: true,
+        },
+      },
+      {
+        labels: {
+          align: 'right',
+          x: -3,
+          style: { color: colorMode === 'dark' ? '#e5e7eb' : '#111827' },
+        },
+        title: {
+          text: 'Volume',
+          style: { color: colorMode === 'dark' ? '#e5e7eb' : '#111827' },
+        },
+        top: '60%',
+        height: '20%',
+        offset: 0,
+        lineWidth: 2,
+      },
+      {
+        labels: {
+          align: 'right',
+          x: -3,
+          style: { color: colorMode === 'dark' ? '#e5e7eb' : '#111827' },
+        },
+        title: {
+          text: 'Strategies',
+          style: { color: colorMode === 'dark' ? '#e5e7eb' : '#111827' },
+        },
+        top: '80%',
+        height: '20%',
+        offset: 0,
+        lineWidth: 2,
+        min: -1,
+        max: 1,
+      },
+    ],
+    tooltip: {
+      enabled: false,
+      split: true,
+
+      shared: true,
+      backgroundColor: colorMode === 'dark' ? '#374151' : '#ffffff',
+      useHTML: true,
+      // formatter: function () {
+      //   const point = this.points?.[0];
+      //   if (point) {
+      //     return ReactDOMServer.renderToString(
+      //       <ChartTooltip colorMode={colorMode} point={point} />
+      //     );
+      //   }
+      //   return '';
+      // },
+    },
+    plotOptions: {
+      series: {
+        states: {
+          inactive: {
+            opacity: 1
+          }
+        },
+        dataLabels: {
+          style: { color: colorMode === 'dark' ? '#e5e7eb' : '#111827' },
+        },
+      },
+      candlestick: {
+        color: '#ef4444',
+        upColor: '#22c55e',
+      },
+    },
+    series: [
+      {
+        type: selectedChartType as any,
+        name: selectedStock,
+        data: stockData.map((d) => [d.date, d.open, d.high, d.low, d.close]),
+        id: 'main',
+        color: '#ef4444',
+        upColor: '#22c55e',
+      },
+      {
+        type: 'column',
+        name: 'Volume',
+        data: stockData.map((d) => [d.date, d.volume]),
+        yAxis: 1,
+        color: colorMode === 'dark' ? 'rgba(255, 165, 0, 0.8)' : 'rgba(37, 99, 235, 0.5)',
+      },
+      ...Object.entries(strategyData).map(([strategy, data], index) => ({
+        type: 'line',
+        name: strategy,
+        data: data.map((d) => [d.date, d.value]),
+        yAxis: 2,
+        color: `hsl(${index * 60}, 70%, 50%)`,
+      })),
+    ],
+    xAxis: {
+      type: 'datetime',
+      labels: {
+        style: { color: colorMode === 'dark' ? '#e5e7eb' : '#111827' },
+      },
+      crosshair: {
+        label: {
+          enabled: true,
+          format: '{value:%Y-%m-%d}',
+        },
+        color:
+          colorMode === 'dark'
+            ? 'rgba(255, 150, 150, 0.7)'
+            : 'rgba(0, 0, 0, 0.3)',
+        dashStyle: 'Dash',
+      },
+      events: {
+        afterSetExtremes: function (e: Highcharts.AxisSetExtremesEventObject) {
+          const chart = this.chart;
+          drawEvents(chart);
+        },
+      },
+      min: chartExtremes.min,
+      max: chartExtremes.max,
+    },
+  }), [colorMode, selectedChartType, selectedStock, stockData, drawEvents, chartExtremes, strategyData]);
 
   const handleAddSeries = (stock: string) => {
     if (!selectedSeries.includes(stock)) {
@@ -374,87 +490,17 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
     }
   };
 
-  const handleRunBacktest = async () => {
-    setIsBacktestRunning(true);
-    try {
-      const result = await runBacktest(backtestWindowSize, backtestSeries);
-      console.log('Backtest result:', result);
-      // Handle the backtest result (e.g., display it on the chart or in a separate component)
-    } catch (error) {
-      console.error('Error running backtest:', error);
-    } finally {
-      setIsBacktestRunning(false);
-    }
-  };
-
-  const handleCancelBacktest = async () => {
-    try {
-      await cancelBacktest();
-      setIsBacktestRunning(false);
-    } catch (error) {
-      console.error('Error canceling backtest:', error);
-    }
+  const handleStrategyChange = (strategies: string[]) => {
+    setSelectedStrategies(strategies);
   };
 
   return (
-    <div
-      className={`w-full ${
-        colorMode === 'dark'
-          ? 'bg-gray-900 text-white'
-          : 'bg-gray-100 text-gray-800'
-      }`}
-    >
+    <div className={`w-full ${colorMode === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-800'}`}>
       <div className="flex">
-        {/* Left Panel - Controls */}
+        {/* Left Panel - Chart and Alerts */}
         <div className="w-1/4 p-4">
-          <div className="space-y-4">
-            {/* Data Series Selection */}
-            <div>
-              <h3 className="font-bold mb-2">Selected Series</h3>
-              <ul className="space-y-2">
-                {selectedSeries.map((series) => (
-                  <li
-                    key={series}
-                    className="flex items-center justify-between"
-                  >
-                    <span>{series}</span>
-                    <button
-                      onClick={() => handleRemoveSeries(series)}
-                      className={`p-1 rounded ${
-                        colorMode === 'dark'
-                          ? 'bg-orange-600 hover:bg-orange-700'
-                          : 'bg-blue-500 hover:bg-blue-600'
-                      } text-white`}
-                    >
-                      <X size={16} />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-              <button
-                onClick={() => setIsAddSeriesPopupOpen(true)}
-                className={`mt-2 w-full py-2 px-4 rounded ${
-                  colorMode === 'dark'
-                    ? 'bg-orange-600 hover:bg-orange-700'
-                    : 'bg-blue-500 hover:bg-blue-600'
-                } text-white`}
-              >
-                Add Series
-              </button>
-            </div>
-
-            {/* Backtest Controls */}
-            <BacktestControls
-              colorMode={colorMode}
-              backtestWindowSize={backtestWindowSize}
-              setBacktestWindowSize={setBacktestWindowSize}
-              backtestSeries={backtestSeries}
-              setBacktestSeries={setBacktestSeries}
-              isBacktestRunning={isBacktestRunning}
-              handleRunBacktest={handleRunBacktest}
-              handleCancelBacktest={handleCancelBacktest}
-            />
-          </div>
+          <ChartSection colorMode={colorMode} onStrategyChange={handleStrategyChange} />
+          <AlertsSection colorMode={colorMode} />
         </div>
 
         {/* Right Panel - Chart */}

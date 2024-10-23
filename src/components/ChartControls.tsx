@@ -35,12 +35,12 @@ const ChartControls: React.FC<ChartControlsProps> = ({
   setSelectedChartType,
 }) => {
   return (
-    <div className={`flex items-center space-x-4 mb-4 ${colorMode === 'dark' ? 'bg-gray-800' : 'bg-gray-100'} p-2 rounded-lg`}>
+    <div className={`flex items-center space-x-4 ${colorMode === 'dark' ? 'bg-gray-800' : 'bg-gray-100'} rounded-lg`}>
       {/* Add Series Button */}
       <div className="relative">
         <button
           onClick={() => setIsAddSeriesPopupOpen(!isAddSeriesPopupOpen)}
-          className={`flex items-center justify-center w-8 h-8 ${colorMode === 'dark' ? 'bg-blue-600' : 'bg-blue-500'} text-white rounded hover:bg-blue-600`}
+          className={`px-2 py-1 text-xs rounded ${colorMode === 'dark' ? 'bg-blue-600' : 'bg-blue-500'} text-white rounded hover:bg-blue-600`}
           title="Add Series"
         >
           <Plus size={16} />
@@ -105,7 +105,8 @@ const ChartControls: React.FC<ChartControlsProps> = ({
       <div className="relative">
         <button
           onClick={() => setIsIndicatorsPopupOpen(!isIndicatorsPopupOpen)}
-          className={`flex items-center justify-center w-8 h-8 ${colorMode === 'dark' ? 'bg-blue-600' : 'bg-blue-500'} text-white rounded hover:bg-blue-600`}
+          className={`px-2 py-1 text-xs rounded ${colorMode === 'dark' ? 'bg-blue-600' : 'bg-blue-500'} text-white rounded hover:bg-blue-600`}
+          //className={`flex items-center justify-center w-8 h-8 ${colorMode === 'dark' ? 'bg-blue-600' : 'bg-blue-500'} text-white rounded hover:bg-blue-600`}
           title="Indicators"
         >
           <Activity size={16} />
