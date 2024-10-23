@@ -2,14 +2,40 @@ import React, { useState } from 'react';
 import SearchBar from './SearchBar';
 import PortfolioGrid from './PortfolioGrid';
 import Timeline from './Timeline';
+import MetaInfo from './MetaInfo';
+import PerformanceChart from './PerformanceChart';
+import { Activity } from 'lucide-react';
 
 interface PortfolioProps {
   colorMode: 'light' | 'dark';
 }
 
+// Generate mock performance data
+const generatePerformanceData = () => {
+  const data = [];
+  const startDate = new Date();
+  startDate.setFullYear(startDate.getFullYear() - 1);
+  
+  for (let i = 0; i < 365; i++) {
+    const date = new Date(startDate);
+    date.setDate(date.getDate() + i);
+    
+    // Generate a somewhat realistic price movement
+    const value = 10000 * (1 + Math.sin(i / 30) * 0.2 + i / 365 * 0.5 + Math.random() * 0.1);
+    
+    data.push({
+      timestamp: date.getTime(),
+      value: value
+    });
+  }
+  
+  return data;
+};
+
 const Portfolio: React.FC<PortfolioProps> = ({ colorMode }) => {
   const [selectedMode, setSelectedMode] = useState<'history' | 'open'>('open');
-  const [selectedResult, setSelectedResult] = useState<any>(null);
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const performanceData = generatePerformanceData();
 
   const mockEvents = [
     {
@@ -44,18 +70,48 @@ const Portfolio: React.FC<PortfolioProps> = ({ colorMode }) => {
     }
   ];
 
+  const handleResultSelect = (result: any) => {
+    setSelectedItem({
+      ...result,
+      stats: {
+        totalPnl: 125000,
+        yearlyPnlPercent: 45.8,
+        monthlyPnlPercent: 12.3,
+        tradesPerDay: 8.5,
+        tradesPerMonth: 255,
+        tradesToday: 12,
+        winRate: 68.5,
+        sharpeRatio: 2.1,
+        maxDrawdown: -15.4
+      }
+    });
+  };
+
   return (
     <div className={`p-6 ${colorMode === 'dark' ? 'bg-gray-900' : 'bg-gray-50'} min-h-screen`}>
-      <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col lg:flex-row gap-6">
-          <div className="lg:w-1/2">
-            <div className="mb-6">
-              <SearchBar
+      <div className="max-w-full mx-auto">
+        {/* Top Section */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex-1 max-w-2xl">
+            <SearchBar
+              colorMode={colorMode}
+              onResultSelect={handleResultSelect}
+            />
+          </div>
+          {selectedItem && (
+            <div className="flex-1 ml-6">
+              <MetaInfo
                 colorMode={colorMode}
-                onResultSelect={(result) => setSelectedResult(result)}
+                selectedItem={selectedItem}
               />
             </div>
+          )}
+        </div>
 
+        {/* Main Content */}
+        <div className="grid grid-cols-12 gap-6">
+          {/* Left Column */}
+          <div className="col-span-5">
             <div className="mb-6">
               <div
                 className={`inline-flex rounded-lg p-1 ${
@@ -93,15 +149,26 @@ const Portfolio: React.FC<PortfolioProps> = ({ colorMode }) => {
               </div>
             </div>
 
-            <div className="mb-6">
-              <PortfolioGrid colorMode={colorMode} mode={selectedMode} />
-            </div>
+            <PortfolioGrid colorMode={colorMode} mode={selectedMode} />
           </div>
 
-          <div className="lg:w-1/2">
+          {/* Right Column */}
+          <div className="col-span-7">
             <Timeline colorMode={colorMode} events={mockEvents} />
           </div>
         </div>
+
+        {/* Performance Chart */}
+        {selectedItem && (
+          <div className="mt-6">
+            <PerformanceChart
+              colorMode={colorMode}
+              data={performanceData}
+              type={selectedItem.type}
+              name={selectedItem.name}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
