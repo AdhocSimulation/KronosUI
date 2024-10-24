@@ -1,19 +1,17 @@
-import React from 'react';
-import { Plus, BarChart, CandlestickChart, LineChart, Activity } from 'lucide-react';
+import React, { useState } from "react";
+import { Search, Activity } from "lucide-react";
 
 interface ChartControlsProps {
-  colorMode: 'light' | 'dark';
+  colorMode: "light" | "dark";
   stocks: string[];
-  selectedSeries: string[];
+  selectedStock: string;
   timeGranularities: { value: string; label: string }[];
   selectedTimeGranularity: string;
   chartTypes: { value: string; label: string; icon: React.ElementType }[];
   selectedChartType: string;
-  isAddSeriesPopupOpen: boolean;
   isIndicatorsPopupOpen: boolean;
-  setIsAddSeriesPopupOpen: (isOpen: boolean) => void;
   setIsIndicatorsPopupOpen: (isOpen: boolean) => void;
-  handleAddSeries: (stock: string) => void;
+  handleStockChange: (stock: string) => void;
   setSelectedTimeGranularity: (granularity: string) => void;
   setSelectedChartType: (chartType: string) => void;
 }
@@ -21,39 +19,69 @@ interface ChartControlsProps {
 const ChartControls: React.FC<ChartControlsProps> = ({
   colorMode,
   stocks,
-  selectedSeries,
+  selectedStock,
   timeGranularities,
   selectedTimeGranularity,
   chartTypes,
   selectedChartType,
-  isAddSeriesPopupOpen,
   isIndicatorsPopupOpen,
-  setIsAddSeriesPopupOpen,
   setIsIndicatorsPopupOpen,
-  handleAddSeries,
+  handleStockChange,
   setSelectedTimeGranularity,
   setSelectedChartType,
 }) => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  const filteredStocks = stocks.filter((stock) =>
+    stock.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
-    <div className={`flex items-center space-x-4 ${colorMode === 'dark' ? 'bg-gray-800' : 'bg-gray-100'} rounded-lg`}>
-      {/* Add Series Button */}
-      <div className="relative">
-        <button
-          onClick={() => setIsAddSeriesPopupOpen(!isAddSeriesPopupOpen)}
-          className={`px-2 py-1 text-xs rounded ${colorMode === 'dark' ? 'bg-blue-600' : 'bg-blue-500'} text-white rounded hover:bg-blue-600`}
-          title="Add Series"
-        >
-          <Plus size={16} />
-        </button>
-        {isAddSeriesPopupOpen && (
-          <div className={`absolute z-10 mt-2 w-48 rounded-md shadow-lg ${colorMode === 'dark' ? 'bg-gray-700' : 'bg-white'} ring-1 ring-black ring-opacity-5`}>
-            <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
-              {stocks.map((stock) => (
+    <div
+      className={`flex items-center space-x-4 ${
+        colorMode === "dark" ? "bg-gray-800" : "bg-gray-100"
+      } rounded-lg p-2`}
+    >
+      {/* Stock Search */}
+      <div className="relative flex-grow">
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          onFocus={() => setIsSearchOpen(true)}
+          placeholder="Search stocks..."
+          className={`w-full px-3 py-1.5 pl-9 text-sm rounded-lg border ${
+            colorMode === "dark"
+              ? "bg-gray-700 border-gray-600 text-white"
+              : "bg-white border-gray-300 text-gray-900"
+          } focus:outline-none focus:ring-1 focus:ring-blue-500`}
+        />
+        <Search
+          className={`absolute left-2.5 top-2 h-4 w-4 ${
+            colorMode === "dark" ? "text-gray-400" : "text-gray-500"
+          }`}
+        />
+        {isSearchOpen && (
+          <div
+            className={`absolute z-10 mt-1 w-full rounded-md shadow-lg ${
+              colorMode === "dark" ? "bg-gray-700" : "bg-white"
+            } ring-1 ring-black ring-opacity-5`}
+          >
+            <div className="py-1" role="menu">
+              {filteredStocks.map((stock) => (
                 <button
                   key={stock}
-                  onClick={() => handleAddSeries(stock)}
-                  className={`block px-4 py-2 text-sm ${colorMode === 'dark' ? 'text-gray-200 hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'} hover:text-gray-900 w-full text-left`}
-                  role="menuitem"
+                  onClick={() => {
+                    handleStockChange(stock);
+                    setSearchTerm("");
+                    setIsSearchOpen(false);
+                  }}
+                  className={`block w-full px-4 py-2 text-sm text-left ${
+                    colorMode === "dark"
+                      ? "text-gray-200 hover:bg-gray-600"
+                      : "text-gray-700 hover:bg-gray-100"
+                  }`}
                 >
                   {stock}
                 </button>
@@ -71,8 +99,12 @@ const ChartControls: React.FC<ChartControlsProps> = ({
             onClick={() => setSelectedTimeGranularity(granularity.value)}
             className={`px-2 py-1 text-xs rounded ${
               selectedTimeGranularity === granularity.value
-                ? colorMode === 'dark' ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white'
-                : colorMode === 'dark' ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                ? colorMode === "dark"
+                  ? "bg-blue-600 text-white"
+                  : "bg-blue-500 text-white"
+                : colorMode === "dark"
+                ? "bg-gray-700 text-gray-200 hover:bg-gray-600"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
             }`}
           >
             {granularity.label}
@@ -90,8 +122,12 @@ const ChartControls: React.FC<ChartControlsProps> = ({
               onClick={() => setSelectedChartType(type.value)}
               className={`p-1 rounded ${
                 selectedChartType === type.value
-                  ? colorMode === 'dark' ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white'
-                  : colorMode === 'dark' ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  ? colorMode === "dark"
+                    ? "bg-blue-600 text-white"
+                    : "bg-blue-500 text-white"
+                  : colorMode === "dark"
+                  ? "bg-gray-700 text-gray-200 hover:bg-gray-600"
+                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
               }`}
               title={type.label}
             >
@@ -102,33 +138,15 @@ const ChartControls: React.FC<ChartControlsProps> = ({
       </div>
 
       {/* Indicators Button */}
-      <div className="relative">
-        <button
-          onClick={() => setIsIndicatorsPopupOpen(!isIndicatorsPopupOpen)}
-          className={`px-2 py-1 text-xs rounded ${colorMode === 'dark' ? 'bg-blue-600' : 'bg-blue-500'} text-white rounded hover:bg-blue-600`}
-          //className={`flex items-center justify-center w-8 h-8 ${colorMode === 'dark' ? 'bg-blue-600' : 'bg-blue-500'} text-white rounded hover:bg-blue-600`}
-          title="Indicators"
-        >
-          <Activity size={16} />
-        </button>
-        {isIndicatorsPopupOpen && (
-          <div className={`absolute z-10 mt-2 w-48 rounded-md shadow-lg ${colorMode === 'dark' ? 'bg-gray-700' : 'bg-white'} ring-1 ring-black ring-opacity-5`}>
-            <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="indicators-menu">
-              {/* Add indicator selection options here */}
-              <button className={`block px-4 py-2 text-sm ${colorMode === 'dark' ? 'text-gray-200 hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'} hover:text-gray-900 w-full text-left`}>
-                EMA
-              </button>
-              <button className={`block px-4 py-2 text-sm ${colorMode === 'dark' ? 'text-gray-200 hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'} hover:text-gray-900 w-full text-left`}>
-                Bollinger Bands
-              </button>
-              <button className={`block px-4 py-2 text-sm ${colorMode === 'dark' ? 'text-gray-200 hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'} hover:text-gray-900 w-full text-left`}>
-                MACD
-              </button>
-              {/* Add more indicators as needed */}
-            </div>
-          </div>
-        )}
-      </div>
+      <button
+        onClick={() => setIsIndicatorsPopupOpen(!isIndicatorsPopupOpen)}
+        className={`px-2 py-1 rounded ${
+          colorMode === "dark" ? "bg-blue-600" : "bg-blue-500"
+        } text-white hover:opacity-90`}
+        title="Indicators"
+      >
+        <Activity size={16} />
+      </button>
     </div>
   );
 };

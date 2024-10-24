@@ -27,8 +27,9 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import "./styles/chart.css";
 import Portfolio from "./components/Portfolio/Portfolio";
 import MonitoringDashboard from "./components/Monitoring/MonitoringDashboard";
+import ServiceDetails from "./components/Monitoring/ServiceDetails";
 
-function App() {
+const App: React.FC = () => {
   const [colorMode, setColorMode] = React.useState<"light" | "dark">("light");
 
   const toggleColorMode = () => {
@@ -42,15 +43,17 @@ function App() {
       </Router>
     </AuthProvider>
   );
-}
+};
 
-function AppContent({
-  colorMode,
-  toggleColorMode,
-}: {
+interface AppContentProps {
   colorMode: "light" | "dark";
   toggleColorMode: () => void;
-}) {
+}
+
+const AppContent: React.FC<AppContentProps> = ({
+  colorMode,
+  toggleColorMode,
+}) => {
   const location = useLocation();
   const { isAuthenticated, logout } = useAuth();
 
@@ -197,28 +200,34 @@ function AppContent({
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/monitoring/service/:id"
+            element={
+              <ProtectedRoute>
+                <ServiceDetails colorMode={colorMode} />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/about" element={<About colorMode={colorMode} />} />
           <Route path="/login" element={<Login colorMode={colorMode} />} />
         </Routes>
       </main>
     </div>
   );
-}
+};
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
 }
 
-function NavLink({
-  to,
-  children,
-  active,
-}: {
+interface NavLinkProps {
   to: string;
   children: React.ReactNode;
   active: boolean;
-}) {
+}
+
+function NavLink({ to, children, active }: NavLinkProps) {
   return (
     <Link
       to={to}

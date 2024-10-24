@@ -1,10 +1,12 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import {
   AlertTriangle,
   CheckCircle,
   XCircle,
   Activity,
   Server,
+  ChevronRight,
 } from "lucide-react";
 import { ServiceHealth, StatusType } from "../../types/monitoring";
 
@@ -14,6 +16,8 @@ interface ServiceCardProps {
 }
 
 const ServiceCard: React.FC<ServiceCardProps> = ({ service, colorMode }) => {
+  const navigate = useNavigate();
+
   const getOverallStatus = (service: ServiceHealth): StatusType => {
     if (!service.health) return "error";
     const statuses = service.health.statuses;
@@ -61,7 +65,8 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service, colorMode }) => {
     <div
       className={`rounded-lg border ${getStatusBorder(status)} ${getStatusColor(
         status
-      )} p-4 transition-all duration-200 hover:scale-[1.02]`}
+      )} p-4 transition-all duration-200 hover:scale-[1.02] cursor-pointer`}
+      onClick={() => navigate(`/monitoring/service/${service.id}`)}
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
@@ -73,11 +78,14 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service, colorMode }) => {
           />
           <h3 className="font-medium">{service.name}</h3>
         </div>
-        {service.loading ? (
-          <Activity className="h-5 w-5 animate-pulse text-blue-500" />
-        ) : (
-          getStatusIcon(status)
-        )}
+        <div className="flex items-center space-x-2">
+          {service.loading ? (
+            <Activity className="h-5 w-5 animate-pulse text-blue-500" />
+          ) : (
+            getStatusIcon(status)
+          )}
+          <ChevronRight className="h-4 w-4" />
+        </div>
       </div>
 
       {/* Error State */}
@@ -91,54 +99,25 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service, colorMode }) => {
         </div>
       )}
 
-      {/* Metrics */}
+      {/* Preview Metrics */}
       {service.health && (
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-2">
-            {service.health.metrics.slice(0, 4).map((metric) => (
-              <div
-                key={metric.name}
-                className={`text-sm ${
-                  colorMode === "dark" ? "text-gray-300" : "text-gray-600"
-                }`}
-              >
-                <div className="text-xs font-medium opacity-75">
-                  {metric.name}
-                </div>
-                <div className="font-medium">
-                  {metric.value}
-                  {metric.unit && (
-                    <span className="text-xs ml-1">{metric.unit}</span>
-                  )}
-                </div>
+        <div className="grid grid-cols-2 gap-2">
+          {service.health.metrics.slice(0, 4).map((metric, index) => (
+            <div
+              key={index}
+              className={`text-sm ${
+                colorMode === "dark" ? "text-gray-300" : "text-gray-600"
+              }`}
+            >
+              <div className="text-xs opacity-75">{metric.name}</div>
+              <div className="font-medium">
+                {metric.value}
+                {metric.unit && (
+                  <span className="text-xs ml-1">{metric.unit}</span>
+                )}
               </div>
-            ))}
-          </div>
-
-          {/* Statuses */}
-          <div className="space-y-2">
-            {service.health.statuses.map((status, index) => (
-              <div
-                key={index}
-                className={`text-sm rounded-md p-2 ${
-                  status.type === "valid"
-                    ? colorMode === "dark"
-                      ? "bg-green-900/30 text-green-200"
-                      : "bg-green-50 text-green-700"
-                    : status.type === "warning"
-                    ? colorMode === "dark"
-                      ? "bg-yellow-900/30 text-yellow-200"
-                      : "bg-yellow-50 text-yellow-700"
-                    : colorMode === "dark"
-                    ? "bg-red-900/30 text-red-200"
-                    : "bg-red-50 text-red-700"
-                }`}
-              >
-                <div className="font-medium">{status.title}</div>
-                <div className="text-xs opacity-75">{status.description}</div>
-              </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
       )}
     </div>

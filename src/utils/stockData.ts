@@ -1,8 +1,16 @@
-import axios from 'axios';
-import { StockData } from '../types/chart';
+import axios from "axios";
+import { StockData } from "../types/chart";
 
-export const fetchStockData = async (stock: string, granularity: string): Promise<StockData[]> => {
+export const fetchStockData = async (
+  stock: string,
+  granularity: string
+): Promise<StockData[]> => {
   try {
+    // For now, return placeholder data instead of making API calls
+    return generatePlaceholderData();
+
+    // In production, uncomment and use real API:
+    /*
     const response = await axios.get(
       `https://www.alphavantage.co/query?function=TIME_SERIES_${granularity.toUpperCase()}&symbol=${stock}&outputsize=full&apikey=YOUR_API_KEY`
     );
@@ -22,7 +30,9 @@ export const fetchStockData = async (stock: string, granularity: string): Promis
         volume: parseInt(values['5. volume']),
       }))
       .reverse();
+    */
   } catch (error) {
+    console.error("Error fetching stock data:", error);
     throw error;
   }
 };

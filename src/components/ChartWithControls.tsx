@@ -1,64 +1,64 @@
-import React from 'react';
-import HighchartsReact from 'highcharts-react-official';
-import Highcharts from 'highcharts/highstock';
-import ChartControls from './ChartControls';
-import ChartSeriesSummary from './ChartSeriesSummary';
+import React from "react";
+import HighchartsReact from "highcharts-react-official";
+import Highcharts from "highcharts/highstock";
+import ChartControls from "./ChartControls";
+import ChartSeriesSummary from "./ChartSeriesSummary";
 
 interface ChartWithControlsProps {
-  colorMode: 'light' | 'dark';
+  colorMode: "light" | "dark";
   stocks: string[];
-  selectedSeries: string[];
+  selectedStock: string;
   timeGranularities: { value: string; label: string }[];
   selectedTimeGranularity: string;
   chartTypes: { value: string; label: string; icon: React.ElementType }[];
   selectedChartType: string;
-  isAddSeriesPopupOpen: boolean;
   isIndicatorsPopupOpen: boolean;
-  setIsAddSeriesPopupOpen: (isOpen: boolean) => void;
   setIsIndicatorsPopupOpen: (isOpen: boolean) => void;
-  handleAddSeries: (stock: string) => void;
+  handleStockChange: (stock: string) => void;
   setSelectedTimeGranularity: (granularity: string) => void;
   setSelectedChartType: (chartType: string) => void;
   chartOptions: Highcharts.Options;
   chartRef: React.RefObject<HighchartsReact.RefObject>;
   stockData: any[];
+  isLoading: boolean;
 }
 
 const ChartWithControls: React.FC<ChartWithControlsProps> = ({
   colorMode,
   stocks,
-  selectedSeries,
+  selectedStock,
   timeGranularities,
   selectedTimeGranularity,
   chartTypes,
   selectedChartType,
-  isAddSeriesPopupOpen,
   isIndicatorsPopupOpen,
-  setIsAddSeriesPopupOpen,
   setIsIndicatorsPopupOpen,
-  handleAddSeries,
+  handleStockChange,
   setSelectedTimeGranularity,
   setSelectedChartType,
   chartOptions,
   chartRef,
   stockData,
+  isLoading,
 }) => {
   return (
-    <div className={`${colorMode === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow w-full`}>
+    <div
+      className={`${
+        colorMode === "dark" ? "bg-gray-800" : "bg-white"
+      } rounded-lg shadow w-full`}
+    >
       <div className="p-4 pb-0">
         <ChartControls
           colorMode={colorMode}
           stocks={stocks}
-          selectedSeries={selectedSeries}
+          selectedStock={selectedStock}
           timeGranularities={timeGranularities}
           selectedTimeGranularity={selectedTimeGranularity}
           chartTypes={chartTypes}
           selectedChartType={selectedChartType}
-          isAddSeriesPopupOpen={isAddSeriesPopupOpen}
           isIndicatorsPopupOpen={isIndicatorsPopupOpen}
-          setIsAddSeriesPopupOpen={setIsAddSeriesPopupOpen}
           setIsIndicatorsPopupOpen={setIsIndicatorsPopupOpen}
-          handleAddSeries={handleAddSeries}
+          handleStockChange={handleStockChange}
           setSelectedTimeGranularity={setSelectedTimeGranularity}
           setSelectedChartType={setSelectedChartType}
         />
@@ -66,17 +66,27 @@ const ChartWithControls: React.FC<ChartWithControlsProps> = ({
       <div className="px-4">
         <ChartSeriesSummary
           colorMode={colorMode}
-          selectedSeries={selectedSeries[0]}
+          selectedSeries={selectedStock}
           selectedTimeGranularity={selectedTimeGranularity}
           stockData={stockData}
         />
       </div>
-      <HighchartsReact
-        highcharts={Highcharts}
-        constructorType={'stockChart'}
-        options={chartOptions}
-        ref={chartRef}
-      />
+      {isLoading ? (
+        <div
+          className={`flex items-center justify-center h-[500px] ${
+            colorMode === "dark" ? "text-gray-400" : "text-gray-600"
+          }`}
+        >
+          Loading...
+        </div>
+      ) : (
+        <HighchartsReact
+          highcharts={Highcharts}
+          constructorType={"stockChart"}
+          options={chartOptions}
+          ref={chartRef}
+        />
+      )}
     </div>
   );
 };
