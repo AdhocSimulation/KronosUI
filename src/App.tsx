@@ -26,6 +26,7 @@ import Login from "./components/Login";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import "./styles/chart.css";
 import Portfolio from "./components/Portfolio/Portfolio";
+import MonitoringDashboard from "./components/Monitoring/MonitoringDashboard";
 
 function App() {
   const [colorMode, setColorMode] = React.useState<"light" | "dark">("light");
@@ -192,7 +193,7 @@ function AppContent({
             path="/monitoring"
             element={
               <ProtectedRoute>
-                <div>Monitoring content</div>
+                <MonitoringDashboard colorMode={colorMode} />
               </ProtectedRoute>
             }
           />
