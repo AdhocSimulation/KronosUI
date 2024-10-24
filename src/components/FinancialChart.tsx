@@ -14,9 +14,13 @@ import ChartTooltip from "./ChartTooltip";
 import ChartWithControls from "./ChartWithControls";
 import ChartSection from "./ChartSection";
 import AlertsSection from "./AlertsSection";
-import { fetchStockData, generatePlaceholderData } from "../utils/stockData";
+import { fetchStockData } from "../utils/stockData";
 import { drawStrategyEvents } from "../utils/eventHelper";
 import { getChartConfiguration } from "../utils/chartConfig";
+
+interface FinancialChartProps {
+  colorMode: "light" | "dark";
+}
 
 const stocks = [
   "AAPL",
@@ -29,23 +33,51 @@ const stocks = [
   "JPM",
   "V",
   "WMT",
+  "PG",
+  "JNJ",
+  "UNH",
+  "HD",
+  "BAC",
 ];
 
 const dummyEvents: StrategyEvent[] = [
   {
     date: new Date("2024-01-15").getTime(),
-    title: "Product Launch",
-    description: "New iPhone model release",
+    title: "Market Holiday",
+    description: "Martin Luther King Jr. Day - Markets Closed",
+    type: "global",
+    category: "Market Event",
+  },
+  {
+    date: new Date("2024-02-15").getTime(),
+    title: "Earnings Report",
+    description: "Q4 2023 Financial Results",
+    type: "stock-specific",
+    stock: "AAPL",
+    category: "Company Event",
   },
   {
     date: new Date("2024-03-01").getTime(),
-    title: "Earnings Report",
-    description: "Q4 2023 Financial Results",
+    title: "Fed Rate Decision",
+    description: "Federal Reserve announces interest rate decision",
+    type: "global",
+    category: "Economic Event",
   },
   {
-    date: new Date("2024-09-20").getTime(),
-    title: "Investor Meeting",
-    description: "Annual Shareholder Meeting",
+    date: new Date("2024-03-15").getTime(),
+    title: "Product Launch",
+    description: "New iPhone model announcement",
+    type: "stock-specific",
+    stock: "AAPL",
+    category: "Company Event",
+  },
+  {
+    date: new Date("2024-03-20").getTime(),
+    title: "Windows Update",
+    description: "Major Windows platform update release",
+    type: "stock-specific",
+    stock: "MSFT",
+    category: "Company Event",
   },
 ];
 
@@ -66,15 +98,14 @@ const chartTypes = [
   { value: "line", label: "Line", icon: LineChart },
 ];
 
-function FinancialChart({ colorMode }: { colorMode: "light" | "dark" }) {
+function FinancialChart({ colorMode }: FinancialChartProps) {
   const [selectedStock, setSelectedStock] = useState("AAPL");
   const [stockData, setStockData] = useState<StockData[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [selectedIndicators, setSelectedIndicators] = useState<string[]>([]);
   const [isIndicatorsPopupOpen, setIsIndicatorsPopupOpen] = useState(false);
   const [selectedChartType, setSelectedChartType] = useState("candlestick");
   const [selectedGranularity, setSelectedGranularity] = useState("daily");
-  const [events, setEvents] = useState<StrategyEvent[]>(dummyEvents);
+  const [events, setEvents] = useState<StrategyEvent[]>([]);
   const [activeEventLines, setActiveEventLines] = useState<Set<number>>(
     new Set()
   );
@@ -86,6 +117,7 @@ function FinancialChart({ colorMode }: { colorMode: "light" | "dark" }) {
   const [signalData, setSignalData] = useState<{ [key: string]: SignalData[] }>(
     {}
   );
+  const [isLoading, setIsLoading] = useState(false);
   const chartRef = useRef<HighchartsReact.RefObject>(null);
 
   useEffect(() => {
@@ -96,8 +128,6 @@ function FinancialChart({ colorMode }: { colorMode: "light" | "dark" }) {
         setStockData(data);
       } catch (error) {
         console.error("Error fetching stock data:", error);
-        const placeholderData = generatePlaceholderData();
-        setStockData(placeholderData);
       } finally {
         setIsLoading(false);
       }
@@ -105,6 +135,16 @@ function FinancialChart({ colorMode }: { colorMode: "light" | "dark" }) {
 
     loadStockData();
   }, [selectedStock, selectedGranularity]);
+
+  useEffect(() => {
+    // Filter events based on selected stock
+    const filteredEvents = dummyEvents.filter(
+      (event) =>
+        event.type === "global" ||
+        (event.type === "stock-specific" && event.stock === selectedStock)
+    );
+    setEvents(filteredEvents);
+  }, [selectedStock]);
 
   useEffect(() => {
     if (selectedStrategies.length > 0) {
@@ -123,21 +163,21 @@ function FinancialChart({ colorMode }: { colorMode: "light" | "dark" }) {
     selectedStrategies.forEach((strategy) => {
       newStrategyData[strategy.name] = stockData.map((data) => ({
         date: data.date,
-        value: Math.random() * 2 - 1,
+        value: Math.random() * 2 - 1, // Random value between -1 and 1
       }));
     });
     setStrategyData(newStrategyData);
   };
 
   const generateSignalData = () => {
-    const newsignalData: { [key: string]: SignalData[] } = {};
+    const newSignalData: { [key: string]: SignalData[] } = {};
     selectedSignals.forEach((signal) => {
-      newsignalData[signal.name] = stockData.map((data) => ({
+      newSignalData[signal.name] = stockData.map((data) => ({
         date: data.date,
-        value: Math.random() * 2 - 1,
+        value: Math.random() * 2 - 1, // Random value between -1 and 1
       }));
     });
-    setSignalData(newsignalData);
+    setSignalData(newSignalData);
   };
 
   const drawEvents = useCallback(
@@ -159,14 +199,14 @@ function FinancialChart({ colorMode }: { colorMode: "light" | "dark" }) {
       case "1min":
       case "5min":
       case "15min":
-        return { min: now - 24 * 60 * 60 * 1000, max: now };
+        return { min: now - 24 * 60 * 60 * 1000, max: now }; // Last 24 hours
       case "30min":
       case "60min":
-        return { min: now - 72 * 60 * 60 * 1000, max: now };
+        return { min: now - 72 * 60 * 60 * 1000, max: now }; // Last 72 hours
       case "daily":
-        return { min: now - 30 * 24 * 60 * 60 * 1000, max: now };
+        return { min: now - 30 * 24 * 60 * 60 * 1000, max: now }; // Last month
       default:
-        return { min: now - 30 * 24 * 60 * 60 * 1000, max: now };
+        return { min: now - 30 * 24 * 60 * 60 * 1000, max: now }; // Default to last month
     }
   }, [selectedGranularity]);
 
@@ -184,6 +224,10 @@ function FinancialChart({ colorMode }: { colorMode: "light" | "dark" }) {
       );
     }
   }, [selectedGranularity, getInitialRange]);
+
+  const handleStockChange = (stock: string) => {
+    setSelectedStock(stock);
+  };
 
   const chartConfiguration = getChartConfiguration({
     colorMode,
@@ -211,10 +255,6 @@ function FinancialChart({ colorMode }: { colorMode: "light" | "dark" }) {
     };
   }
 
-  const handleStockChange = (stock: string) => {
-    setSelectedStock(stock);
-  };
-
   const handleStrategyChange = (strategies: Strategy[]) => {
     setSelectedStrategies(strategies);
   };
@@ -232,6 +272,7 @@ function FinancialChart({ colorMode }: { colorMode: "light" | "dark" }) {
       }`}
     >
       <div className="flex">
+        {/* Left Panel - Chart and Alerts */}
         <div className="w-1/4 p-4">
           <ChartSection
             colorMode={colorMode}
@@ -241,6 +282,7 @@ function FinancialChart({ colorMode }: { colorMode: "light" | "dark" }) {
           <AlertsSection colorMode={colorMode} />
         </div>
 
+        {/* Right Panel - Chart */}
         <div className="w-3/4 p-4">
           <ChartWithControls
             colorMode={colorMode}

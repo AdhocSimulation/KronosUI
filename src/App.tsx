@@ -29,7 +29,7 @@ import Portfolio from "./components/Portfolio/Portfolio";
 import MonitoringDashboard from "./components/Monitoring/MonitoringDashboard";
 import ServiceDetails from "./components/Monitoring/ServiceDetails";
 
-const App: React.FC = () => {
+function App() {
   const [colorMode, setColorMode] = React.useState<"light" | "dark">("light");
 
   const toggleColorMode = () => {
@@ -43,17 +43,15 @@ const App: React.FC = () => {
       </Router>
     </AuthProvider>
   );
-};
-
-interface AppContentProps {
-  colorMode: "light" | "dark";
-  toggleColorMode: () => void;
 }
 
-const AppContent: React.FC<AppContentProps> = ({
+function AppContent({
   colorMode,
   toggleColorMode,
-}) => {
+}: {
+  colorMode: "light" | "dark";
+  toggleColorMode: () => void;
+}) {
   const location = useLocation();
   const { isAuthenticated, logout } = useAuth();
 
@@ -94,9 +92,9 @@ const AppContent: React.FC<AppContentProps> = ({
           colorMode === "dark"
             ? "bg-gray-800 text-white"
             : "bg-white text-gray-800"
-        } shadow-md fixed top-0 left-0 right-0 z-10`}
+        } shadow-md fixed top-0 left-0 right-0 z-10 w-full`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
               <Link to="/" className="font-bold text-xl flex items-center">
@@ -214,20 +212,22 @@ const AppContent: React.FC<AppContentProps> = ({
       </main>
     </div>
   );
-};
+}
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
 }
 
-interface NavLinkProps {
+function NavLink({
+  to,
+  children,
+  active,
+}: {
   to: string;
   children: React.ReactNode;
   active: boolean;
-}
-
-function NavLink({ to, children, active }: NavLinkProps) {
+}) {
   return (
     <Link
       to={to}

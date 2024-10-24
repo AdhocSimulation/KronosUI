@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Search, Activity } from "lucide-react";
 
 interface ChartControlsProps {
@@ -32,6 +32,21 @@ const ChartControls: React.FC<ChartControlsProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        searchRef.current &&
+        !searchRef.current.contains(event.target as Node)
+      ) {
+        setIsSearchOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const filteredStocks = stocks.filter((stock) =>
     stock.toLowerCase().includes(searchTerm.toLowerCase())
@@ -44,7 +59,7 @@ const ChartControls: React.FC<ChartControlsProps> = ({
       } rounded-lg p-2`}
     >
       {/* Stock Search */}
-      <div className="relative flex-grow">
+      <div className="relative w-48" ref={searchRef}>
         <input
           type="text"
           value={searchTerm}
@@ -62,11 +77,11 @@ const ChartControls: React.FC<ChartControlsProps> = ({
             colorMode === "dark" ? "text-gray-400" : "text-gray-500"
           }`}
         />
-        {isSearchOpen && (
+        {isSearchOpen && filteredStocks.length > 0 && (
           <div
             className={`absolute z-10 mt-1 w-full rounded-md shadow-lg ${
               colorMode === "dark" ? "bg-gray-700" : "bg-white"
-            } ring-1 ring-black ring-opacity-5`}
+            } ring-1 ring-black ring-opacity-5 max-h-60 overflow-auto`}
           >
             <div className="py-1" role="menu">
               {filteredStocks.map((stock) => (
@@ -78,7 +93,11 @@ const ChartControls: React.FC<ChartControlsProps> = ({
                     setIsSearchOpen(false);
                   }}
                   className={`block w-full px-4 py-2 text-sm text-left ${
-                    colorMode === "dark"
+                    stock === selectedStock
+                      ? colorMode === "dark"
+                        ? "bg-blue-600 text-white"
+                        : "bg-blue-100 text-blue-900"
+                      : colorMode === "dark"
                       ? "text-gray-200 hover:bg-gray-600"
                       : "text-gray-700 hover:bg-gray-100"
                   }`}
@@ -91,7 +110,7 @@ const ChartControls: React.FC<ChartControlsProps> = ({
         )}
       </div>
 
-      {/* Time Granularity Selection */}
+      {/* Rest of the component remains the same */}
       <div className="flex space-x-1">
         {timeGranularities.map((granularity) => (
           <button
@@ -112,7 +131,6 @@ const ChartControls: React.FC<ChartControlsProps> = ({
         ))}
       </div>
 
-      {/* Chart Type Selection */}
       <div className="flex space-x-1">
         {chartTypes.map((type) => {
           const Icon = type.icon;
@@ -137,7 +155,6 @@ const ChartControls: React.FC<ChartControlsProps> = ({
         })}
       </div>
 
-      {/* Indicators Button */}
       <button
         onClick={() => setIsIndicatorsPopupOpen(!isIndicatorsPopupOpen)}
         className={`px-2 py-1 rounded ${
