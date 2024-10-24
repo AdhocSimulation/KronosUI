@@ -1,19 +1,37 @@
-import React from 'react';
-import { BrowserRouter as Router, Route, Routes, Link, useLocation, Navigate } from 'react-router-dom';
-import { Sun, Moon, BarChart2, Home as HomeIcon, Info, LogOut, Briefcase, Code, LayoutDashboard, Activity } from 'lucide-react';
-import FinancialChart from './components/FinancialChart';
-import Home from './components/Home';
-import About from './components/About';
-import Login from './components/Login';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import './styles/chart.css';
-import Portfolio from './components/Portfolio/Portfolio';
+import React from "react";
+import {
+  BrowserRouter as Router,
+  Route,
+  Routes,
+  Link,
+  useLocation,
+  Navigate,
+} from "react-router-dom";
+import {
+  Sun,
+  Moon,
+  BarChart2,
+  Home as HomeIcon,
+  Info,
+  LogOut,
+  Briefcase,
+  Code,
+  LayoutDashboard,
+  Activity,
+} from "lucide-react";
+import FinancialChart from "./components/FinancialChart";
+import Home from "./components/Home";
+import About from "./components/About";
+import Login from "./components/Login";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import "./styles/chart.css";
+import Portfolio from "./components/Portfolio/Portfolio";
 
 function App() {
-  const [colorMode, setColorMode] = React.useState<'light' | 'dark'>('light');
+  const [colorMode, setColorMode] = React.useState<"light" | "dark">("light");
 
   const toggleColorMode = () => {
-    setColorMode(prev => prev === 'light' ? 'dark' : 'light');
+    setColorMode((prev) => (prev === "light" ? "dark" : "light"));
   };
 
   return (
@@ -25,38 +43,75 @@ function App() {
   );
 }
 
-function AppContent({ colorMode, toggleColorMode }: { colorMode: 'light' | 'dark', toggleColorMode: () => void }) {
+function AppContent({
+  colorMode,
+  toggleColorMode,
+}: {
+  colorMode: "light" | "dark";
+  toggleColorMode: () => void;
+}) {
   const location = useLocation();
   const { isAuthenticated, logout } = useAuth();
 
   const menuItems = [
-    { path: '/', label: 'Home', icon: HomeIcon },
-    { path: '/chart', label: 'Financial Chart', icon: BarChart2, requireAuth: true },
-    { path: '/portfolios', label: 'Portfolios', icon: Briefcase, requireAuth: true },
-    { path: '/strategy-builder', label: 'Strategy Builder', icon: Code, requireAuth: true },
-    { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, requireAuth: true },
-    { path: '/monitoring', label: 'Monitoring', icon: Activity, requireAuth: true },
-    { path: '/about', label: 'About', icon: Info },
+    { path: "/", label: "Home", icon: HomeIcon },
+    { path: "/chart", label: "Live Chart", icon: BarChart2, requireAuth: true },
+    {
+      path: "/portfolios",
+      label: "Portfolios",
+      icon: Briefcase,
+      requireAuth: true,
+    },
+    {
+      path: "/strategy-builder",
+      label: "Strategy Builder",
+      icon: Code,
+      requireAuth: true,
+    },
+    {
+      path: "/dashboard",
+      label: "Dashboard",
+      icon: LayoutDashboard,
+      requireAuth: true,
+    },
+    {
+      path: "/monitoring",
+      label: "Monitoring",
+      icon: Activity,
+      requireAuth: true,
+    },
+    { path: "/about", label: "About", icon: Info },
   ];
 
   return (
     <div className={`min-h-screen ${colorMode}`}>
-      <nav className={`${colorMode === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} shadow-md fixed top-0 left-0 right-0 z-10`}>
+      <nav
+        className={`${
+          colorMode === "dark"
+            ? "bg-gray-800 text-white"
+            : "bg-white text-gray-800"
+        } shadow-md fixed top-0 left-0 right-0 z-10`}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
               <Link to="/" className="font-bold text-xl flex items-center">
-                <BarChart2 className="mr-2" /> FinApp
+                <BarChart2 className="mr-2" /> Kronos
               </Link>
               <div className="ml-10 flex items-baseline space-x-4">
-                {menuItems.map((item) => (
-                  (!item.requireAuth || isAuthenticated) && (
-                    <NavLink key={item.path} to={item.path} active={location.pathname === item.path}>
-                      <item.icon className="w-5 h-5 mr-1" />
-                      {item.label}
-                    </NavLink>
-                  )
-                ))}
+                {menuItems.map(
+                  (item) =>
+                    (!item.requireAuth || isAuthenticated) && (
+                      <NavLink
+                        key={item.path}
+                        to={item.path}
+                        active={location.pathname === item.path}
+                      >
+                        <item.icon className="w-5 h-5 mr-1" />
+                        {item.label}
+                      </NavLink>
+                    )
+                )}
               </div>
             </div>
             <div className="flex items-center">
@@ -64,7 +119,9 @@ function AppContent({ colorMode, toggleColorMode }: { colorMode: 'light' | 'dark
                 <button
                   onClick={logout}
                   className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
-                    colorMode === 'dark' ? 'text-gray-300 hover:bg-gray-700 hover:text-white' : 'text-gray-700 hover:bg-gray-200 hover:text-gray-900'
+                    colorMode === "dark"
+                      ? "text-gray-300 hover:bg-gray-700 hover:text-white"
+                      : "text-gray-700 hover:bg-gray-200 hover:text-gray-900"
                   }`}
                 >
                   <LogOut className="w-5 h-5 mr-1" />
@@ -77,16 +134,26 @@ function AppContent({ colorMode, toggleColorMode }: { colorMode: 'light' | 'dark
               )}
               <button
                 onClick={toggleColorMode}
-                className={`ml-4 p-2 rounded-full ${colorMode === 'dark' ? 'bg-gray-700 text-yellow-400' : 'bg-gray-200 text-gray-800'}`}
+                className={`ml-4 p-2 rounded-full ${
+                  colorMode === "dark"
+                    ? "bg-gray-700 text-yellow-400"
+                    : "bg-gray-200 text-gray-800"
+                }`}
               >
-                {colorMode === 'dark' ? <Sun size={24} /> : <Moon size={24} />}
+                {colorMode === "dark" ? <Sun size={24} /> : <Moon size={24} />}
               </button>
             </div>
           </div>
         </div>
       </nav>
 
-      <main className={`${colorMode === 'dark' ? 'bg-gray-900 text-gray-100' : 'bg-gray-100 text-gray-900'} min-h-screen pt-16`}>
+      <main
+        className={`${
+          colorMode === "dark"
+            ? "bg-gray-900 text-gray-100"
+            : "bg-gray-100 text-gray-900"
+        } min-h-screen pt-16`}
+      >
         <Routes>
           <Route path="/" element={<Home colorMode={colorMode} />} />
           <Route
@@ -142,14 +209,22 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
 }
 
-function NavLink({ to, children, active }: { to: string, children: React.ReactNode, active: boolean }) {
+function NavLink({
+  to,
+  children,
+  active,
+}: {
+  to: string;
+  children: React.ReactNode;
+  active: boolean;
+}) {
   return (
     <Link
       to={to}
       className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
         active
-          ? 'bg-gray-900 text-white'
-          : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+          ? "bg-gray-900 text-white"
+          : "text-gray-300 hover:bg-gray-700 hover:text-white"
       }`}
     >
       {children}
