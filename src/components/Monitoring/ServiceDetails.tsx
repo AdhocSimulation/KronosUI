@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   AlertTriangle,
@@ -14,13 +14,9 @@ interface ServiceDetailsProps {
   colorMode: "light" | "dark";
 }
 
-const ServiceDetails: React.FC<ServiceDetailsProps> = ({ colorMode }) => {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-
-  // Mock service data - in a real app, fetch this based on the ID
-  const service: ServiceHealth = {
-    id: id || "",
+const mockServices: { [key: string]: ServiceHealth } = {
+  "1": {
+    id: "1",
     name: "Authentication Service",
     endpoint: "/auth/health",
     loading: false,
@@ -54,7 +50,56 @@ const ServiceDetails: React.FC<ServiceDetailsProps> = ({ colorMode }) => {
         },
       ],
     },
-  };
+  },
+  "2": {
+    id: "2",
+    name: "User Service",
+    endpoint: "/users/health",
+    loading: false,
+    health: {
+      serviceName: "User Service",
+      metrics: [
+        { name: "CPU Usage", value: 65, unit: "%" },
+        { name: "Memory", value: 4.2, unit: "GB" },
+        { name: "Requests/sec", value: 1200 },
+        { name: "Latency", value: 180, unit: "ms" },
+        { name: "Error Rate", value: 0.5, unit: "%" },
+        { name: "Success Rate", value: 99.5, unit: "%" },
+        { name: "Active Sessions", value: 25000 },
+        { name: "Database Connections", value: 150 },
+      ],
+      statuses: [
+        {
+          title: "System Status",
+          description: "High load detected",
+          type: "warning",
+        },
+        {
+          title: "Database Connection",
+          description: "Connected to database",
+          type: "valid",
+        },
+        {
+          title: "Cache Status",
+          description: "Low hit rate",
+          type: "warning",
+        },
+      ],
+    },
+  },
+  // Add more services as needed
+};
+
+const ServiceDetails: React.FC<ServiceDetailsProps> = ({ colorMode }) => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const [service, setService] = useState<ServiceHealth | null>(null);
+
+  useEffect(() => {
+    if (id && mockServices[id]) {
+      setService(mockServices[id]);
+    }
+  }, [id]);
 
   const getStatusIcon = (status: StatusType) => {
     switch (status) {
@@ -68,7 +113,17 @@ const ServiceDetails: React.FC<ServiceDetailsProps> = ({ colorMode }) => {
   };
 
   if (!service) {
-    return <div>Service not found</div>;
+    return (
+      <div
+        className={`min-h-screen p-6 ${
+          colorMode === "dark"
+            ? "bg-gray-900 text-white"
+            : "bg-gray-50 text-gray-900"
+        }`}
+      >
+        Service not found
+      </div>
+    );
   }
 
   return (
@@ -77,7 +132,7 @@ const ServiceDetails: React.FC<ServiceDetailsProps> = ({ colorMode }) => {
         colorMode === "dark" ? "bg-gray-900" : "bg-gray-50"
       }`}
     >
-      {/* Header */}
+      {/* Rest of the component remains the same */}
       <div className="mb-6">
         <button
           onClick={() => navigate("/monitoring")}
