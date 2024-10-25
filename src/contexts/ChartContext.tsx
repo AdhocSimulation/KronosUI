@@ -88,6 +88,7 @@ export const ChartProvider: React.FC<{ children: ReactNode }> = ({
   }, []);
 
   const updateChartState = useCallback((state: Partial<ChartState>) => {
+    console.trace();
     if (state.selectedStock !== undefined)
       setSelectedStock(state.selectedStock);
     if (state.selectedStrategies !== undefined)

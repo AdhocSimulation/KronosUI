@@ -25,6 +25,11 @@ export const getChartConfiguration = ({
     chart: {
       backgroundColor: colorMode === "dark" ? "#1f2937" : "#ffffff",
       height: "60%",
+      events: {
+        load() {
+          const;
+        },
+      },
     },
     rangeSelector: {
       enabled: false,

@@ -41,6 +41,8 @@ const ChartWithControls: React.FC<ChartWithControlsProps> = ({
   stockData,
   isLoading,
 }) => {
+  console.log("INside");
+  console.log({ ...chartOptions });
   return (
     <div
       className={`${

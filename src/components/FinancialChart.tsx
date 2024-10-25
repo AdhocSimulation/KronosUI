@@ -109,6 +109,17 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
     updateChartState,
   } = useChart();
 
+  console.log({
+    selectedStock,
+    setSelectedStock,
+    selectedStrategies,
+    selectedSignals,
+    selectedGranularity,
+    selectedChartType,
+    chartExtremes,
+    updateChartState,
+  });
+
   const [stockData, setStockData] = useState<StockData[]>([]);
   const [isIndicatorsPopupOpen, setIsIndicatorsPopupOpen] = useState(false);
   const [events, setEvents] = useState<StrategyEvent[]>([]);
@@ -123,6 +134,22 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
   );
   const [isLoading, setIsLoading] = useState(false);
   const chartRef = useRef<HighchartsReact.RefObject>(null);
+
+  const handleStockChange = (stock: string) => {
+    updateChartState({ selectedStock: stock });
+  };
+
+  const handleTimeGranularityChange = (granularity: string) => {
+    updateChartState({ selectedGranularity: granularity });
+  };
+
+  const handleChartTypeChange = (type: string) => {
+    updateChartState({ selectedChartType: type });
+  };
+
+  const handleChartExtremesChange = (type: { min: number; max: number }) => {
+    updateChartState({ chartExtremes: type });
+  };
 
   useEffect(() => {
     const loadStockData = async () => {
@@ -189,17 +216,13 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
     [events, colorMode, activeEventLines]
   );
 
-  const handleStockChange = (stock: string) => {
-    updateChartState({ selectedStock: stock });
-  };
-
-  const handleTimeGranularityChange = (granularity: string) => {
-    updateChartState({ selectedGranularity: granularity });
-  };
-
-  const handleChartTypeChange = (type: string) => {
-    updateChartState({ selectedChartType: type });
-  };
+  const setExtremes = useCallback(
+    (chart: Highcharts.Chart) => {
+      const xAxis = chart.xAxis[0];
+      xAxis.update({ min: chartExtremes.min, max: chartExtremes.max });
+    },
+    [events, colorMode, activeEventLines]
+  );
 
   const chartConfiguration = getChartConfiguration({
     colorMode,
@@ -223,6 +246,33 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
           .querySelectorAll(".event-tooltip")
           .forEach((el) => el.remove());
         drawEvents(this);
+      },
+    };
+  }
+
+  // Add extremes change event handlers
+  if (chartConfiguration.xAxis && Array.isArray(chartConfiguration.xAxis)) {
+    chartConfiguration.xAxis[0].events = {
+      ...chartConfiguration.xAxis[0].events,
+      afterSetExtremes: function (e: Highcharts.AxisSetExtremesEventObject) {
+        if (e.trigger != "navigator" && e.trigger != "mousewheel") {
+          return;
+        }
+        if (e.min !== undefined && e.max !== undefined) {
+          handleChartExtremesChange({ min: e.min, max: e.max });
+        }
+      },
+    };
+  } else if (chartConfiguration.xAxis) {
+    chartConfiguration.xAxis.events = {
+      ...chartConfiguration.xAxis.events,
+      afterSetExtremes: function (e: Highcharts.AxisSetExtremesEventObject) {
+        if (e.trigger != "navigator" && e.trigger != "mousewheel") {
+          return;
+        }
+        if (e.min !== undefined && e.max !== undefined) {
+          handleChartExtremesChange({ min: e.min, max: e.max });
+        }
       },
     };
   }
