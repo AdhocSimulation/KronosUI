@@ -78,7 +78,7 @@ export const drawStrategyEvents = (
             .path(["M", xPos, chartTop, "L", xPos, chartBottom])
             .attr({
               "stroke-width": 1,
-              stroke: colorMode === "dark" ? "#e5e7eb" : "#4b5563",
+              stroke: circleColor, // Use the same color as the circle
               dashstyle: "shortdash",
               zIndex: 4,
               class: `vertical-line-${event.date} event-element`,
@@ -164,7 +164,7 @@ export const drawStrategyEvents = (
           .path(["M", xPos, chartTop, "L", xPos, chartBottom])
           .attr({
             "stroke-width": 1,
-            stroke: colorMode === "dark" ? "#e5e7eb" : "#4b5563",
+            stroke: circleColor, // Use the same color as the circle
             dashstyle: "shortdash",
             zIndex: 4,
             class: `vertical-line-${event.date} event-element`,

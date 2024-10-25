@@ -74,23 +74,28 @@ function Portfolio({ colorMode }: PortfolioProps) {
   };
 
   const handleRowClick = (position: Position) => {
+    // Get the execution date and set it to the start of the day
     const executionDate = new Date(position.executionTime);
-    const startDate = new Date(executionDate);
-    const endDate = new Date(executionDate);
-    startDate.setDate(startDate.getDate() - 10);
-    endDate.setDate(endDate.getDate() + 10);
+    executionDate.setHours(0, 0, 0, 0);
+    const executionTimestamp = executionDate.getTime();
 
+    const DAY_IN_MS = 24 * 60 * 60 * 1000;
+    const startDate = executionTimestamp - 10 * DAY_IN_MS;
+    const endDate = executionTimestamp + 10 * DAY_IN_MS;
+
+    // First update the chart state
     updateChartState({
       selectedStock: position.asset,
-      chartExtremes: {
-        min: startDate.getTime(),
-        max: endDate.getTime(),
-      },
       selectedStrategies: [{ name: position.strategy }],
       selectedSignals: [],
       selectedGranularity: "daily",
+      chartExtremes: {
+        min: startDate,
+        max: endDate,
+      },
     });
 
+    // Then navigate to the chart
     navigate("/chart");
   };
 

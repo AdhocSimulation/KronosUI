@@ -7,6 +7,7 @@ import {
   StockData,
   StrategyData,
   StrategyEvent,
+  FinancialChartProps,
 } from "../types/chart";
 import ChartTooltip from "./ChartTooltip";
 import ChartWithControls from "./ChartWithControls";
@@ -16,10 +17,6 @@ import { fetchStockData } from "../utils/stockData";
 import { drawStrategyEvents } from "../utils/eventHelper";
 import { getChartConfiguration } from "../utils/chartConfig";
 import { useChart } from "../contexts/ChartContext";
-
-interface FinancialChartProps {
-  colorMode: "light" | "dark";
-}
 
 const stocks = [
   "AAPL",
@@ -109,17 +106,6 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
     updateChartState,
   } = useChart();
 
-  console.log({
-    selectedStock,
-    setSelectedStock,
-    selectedStrategies,
-    selectedSignals,
-    selectedGranularity,
-    selectedChartType,
-    chartExtremes,
-    updateChartState,
-  });
-
   const [stockData, setStockData] = useState<StockData[]>([]);
   const [isIndicatorsPopupOpen, setIsIndicatorsPopupOpen] = useState(false);
   const [events, setEvents] = useState<StrategyEvent[]>([]);
@@ -134,6 +120,7 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
   );
   const [isLoading, setIsLoading] = useState(false);
   const chartRef = useRef<HighchartsReact.RefObject>(null);
+  const extremesTimeout = useRef<NodeJS.Timeout>();
 
   const handleStockChange = (stock: string) => {
     updateChartState({ selectedStock: stock });
@@ -147,9 +134,24 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
     updateChartState({ selectedChartType: type });
   };
 
-  const handleChartExtremesChange = (type: { min: number; max: number }) => {
-    updateChartState({ chartExtremes: type });
+  const handleChartExtremesChange = (extremes: {
+    min: number;
+    max: number;
+  }) => {
+    updateChartState({ chartExtremes: extremes });
   };
+
+  const forceExtremesUpdate = useCallback(() => {
+    if (chartRef.current?.chart) {
+      const chart = chartRef.current.chart;
+
+      chart.xAxis[0].setExtremes(null, null, false);
+
+      chart.xAxis[0].setExtremes(chartExtremes.min, chartExtremes.max, true, {
+        trigger: "syncExtremes",
+      });
+    }
+  }, [chartExtremes]);
 
   useEffect(() => {
     const loadStockData = async () => {
@@ -168,7 +170,6 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
   }, [selectedStock, selectedGranularity]);
 
   useEffect(() => {
-    // Filter events based on selected stock
     const filteredEvents = dummyEvents.filter(
       (event) =>
         event.type === "global" ||
@@ -203,6 +204,22 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
     }
   }, [selectedSignals, stockData]);
 
+  useEffect(() => {
+    if (extremesTimeout.current) {
+      clearTimeout(extremesTimeout.current);
+    }
+
+    extremesTimeout.current = setTimeout(() => {
+      forceExtremesUpdate();
+    }, 100);
+
+    return () => {
+      if (extremesTimeout.current) {
+        clearTimeout(extremesTimeout.current);
+      }
+    };
+  }, [chartExtremes, forceExtremesUpdate]);
+
   const drawEvents = useCallback(
     (chart: Highcharts.Chart) => {
       drawStrategyEvents(
@@ -212,14 +229,6 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
         activeEventLines,
         setActiveEventLines
       );
-    },
-    [events, colorMode, activeEventLines]
-  );
-
-  const setExtremes = useCallback(
-    (chart: Highcharts.Chart) => {
-      const xAxis = chart.xAxis[0];
-      xAxis.update({ min: chartExtremes.min, max: chartExtremes.max });
     },
     [events, colorMode, activeEventLines]
   );
@@ -239,6 +248,7 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
   if (chartConfiguration.chart) {
     chartConfiguration.chart.events = {
       load: function (this: Highcharts.Chart) {
+        forceExtremesUpdate();
         drawEvents(this);
       },
       redraw: function (this: Highcharts.Chart) {
@@ -250,12 +260,12 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
     };
   }
 
-  // Add extremes change event handlers
   if (chartConfiguration.xAxis && Array.isArray(chartConfiguration.xAxis)) {
     chartConfiguration.xAxis[0].events = {
       ...chartConfiguration.xAxis[0].events,
       afterSetExtremes: function (e: Highcharts.AxisSetExtremesEventObject) {
-        if (e.trigger != "navigator" && e.trigger != "mousewheel") {
+        if (e.trigger === "syncExtremes") return;
+        if (e.trigger !== "navigator" && e.trigger !== "mousewheel") {
           return;
         }
         if (e.min !== undefined && e.max !== undefined) {
@@ -267,7 +277,8 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
     chartConfiguration.xAxis.events = {
       ...chartConfiguration.xAxis.events,
       afterSetExtremes: function (e: Highcharts.AxisSetExtremesEventObject) {
-        if (e.trigger != "navigator" && e.trigger != "mousewheel") {
+        if (e.trigger === "syncExtremes") return;
+        if (e.trigger !== "navigator" && e.trigger !== "mousewheel") {
           return;
         }
         if (e.min !== undefined && e.max !== undefined) {
