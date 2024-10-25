@@ -103,15 +103,14 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
     selectedGranularity,
     selectedChartType,
     chartExtremes,
+    activeEventLines,
+    setActiveEventLines,
     updateChartState,
   } = useChart();
 
   const [stockData, setStockData] = useState<StockData[]>([]);
   const [isIndicatorsPopupOpen, setIsIndicatorsPopupOpen] = useState(false);
   const [events, setEvents] = useState<StrategyEvent[]>([]);
-  const [activeEventLines, setActiveEventLines] = useState<Set<number>>(
-    new Set()
-  );
   const [strategyData, setStrategyData] = useState<{
     [key: string]: StrategyData[];
   }>({});
@@ -144,9 +143,7 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
   const forceExtremesUpdate = useCallback(() => {
     if (chartRef.current?.chart) {
       const chart = chartRef.current.chart;
-
       chart.xAxis[0].setExtremes(null, null, false);
-
       chart.xAxis[0].setExtremes(chartExtremes.min, chartExtremes.max, true, {
         trigger: "syncExtremes",
       });
@@ -227,10 +224,12 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
         events,
         colorMode,
         activeEventLines,
-        setActiveEventLines
+        (lines) => {
+          updateChartState({ activeEventLines: lines });
+        }
       );
     },
-    [events, colorMode, activeEventLines]
+    [events, colorMode, activeEventLines, updateChartState]
   );
 
   const chartConfiguration = getChartConfiguration({
@@ -243,6 +242,7 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
     chartExtremes,
     strategyData,
     selectedStrategies,
+    activeEventLines,
   });
 
   if (chartConfiguration.chart) {
@@ -265,11 +265,7 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
       ...chartConfiguration.xAxis[0].events,
       afterSetExtremes: function (e: Highcharts.AxisSetExtremesEventObject) {
         if (e.trigger === "syncExtremes") return;
-        if (
-          e.trigger !== "zoom" &&
-          e.trigger !== "navigator" &&
-          e.trigger !== "mousewheel"
-        ) {
+        if (e.trigger !== "navigator" && e.trigger !== "mousewheel") {
           return;
         }
         if (e.min !== undefined && e.max !== undefined) {
@@ -282,11 +278,7 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
       ...chartConfiguration.xAxis.events,
       afterSetExtremes: function (e: Highcharts.AxisSetExtremesEventObject) {
         if (e.trigger === "syncExtremes") return;
-        if (
-          e.trigger !== "zoom" &&
-          e.trigger !== "navigator" &&
-          e.trigger !== "mousewheel"
-        ) {
+        if (e.trigger !== "navigator" && e.trigger !== "mousewheel") {
           return;
         }
         if (e.min !== undefined && e.max !== undefined) {

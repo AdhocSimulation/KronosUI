@@ -1,74 +1,68 @@
-/* Chart Styles */
-.chart-container {
-  height: 80vh;
-  min-height: 500px;
+export type Callback<T, U> = (arg: T) => U;
+
+export type SingleCallback<T> = (arg: T) => void;
+
+export interface FinancialChartProps {
+  colorMode: "light" | "dark";
 }
 
-/* Dark Mode Styles */
-.dark .highcharts-scrollbar-thumb {
-  fill: #ffa500;
-  stroke: #ffa500;
+export interface Signal {
+  name: string;
+  type: "Measure" | "External";
 }
 
-.dark .highcharts-scrollbar-button {
-  fill: #5b684a;
-  stroke: #54684a;
+export interface Strategy {
+  name: string;
 }
 
-.dark .highcharts-scrollbar-track {
-  fill: #3e482d;
-  stroke: #35482d;
+export interface StockData {
+  date: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
 }
 
-/* Light Mode Styles */
-.light .highcharts-scrollbar-thumb {
-  fill: #3182ce;
-  stroke: #9fce31;
+export interface StrategyData {
+  value: number;
+  date: number;
 }
 
-.light .highcharts-scrollbar-button {
-  fill: #eef0e2;
-  stroke: #e2e8f0;
+export interface SignalData {
+  value: number;
+  date: number;
 }
 
-.light .highcharts-scrollbar-track {
-  fill: #f6f7ed;
-  stroke: #f2f7ed;
+export interface TimeGranularity {
+  value: string;
+  label: string;
 }
 
-/* Trend Line Drawing Styles */
-.trend-line-controls {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 100;
+export interface ChartType {
+  value: string;
+  label: string;
+  icon: React.ElementType;
 }
 
-.trend-line-button {
-  padding: 5px 10px;
-  margin-left: 5px;
-  border-radius: 4px;
-  font-size: 14px;
-  cursor: pointer;
+export interface StrategyEvent {
+  date: number;
+  title: string;
+  description: string;
+  type: "global" | "stock-specific";
+  stock?: string;
+  category?: string;
 }
 
-.dark .trend-line-button {
-  background-color: #4a5568;
-  color: #e2e8f0;
-  border: 1px solid #718096;
-}
-
-.light .trend-line-button {
-  background-color: #e2e8f0;
-  color: #2d3748;
-  border: 1px solid #cbd5e0;
-}
-
-.trend-line-button:hover {
-  opacity: 0.8;
-}
-
-.trend-line-button.active {
-  background-color: #48bb78;
-  color: white;
+export interface ChartConfigOptions {
+  colorMode: "light" | "dark";
+  selectedChartType: string;
+  selectedStock: string;
+  stockData: StockData[];
+  signalData: { [key: string]: SignalData[] };
+  selectedSignals: Signal[];
+  chartExtremes: { min: number; max: number };
+  strategyData: { [key: string]: StrategyData[] };
+  selectedStrategies: Strategy[];
+  activeEventLines: Set<number>;
 }

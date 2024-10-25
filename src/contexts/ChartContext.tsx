@@ -17,6 +17,7 @@ interface ChartState {
     min: number;
     max: number;
   };
+  activeEventLines: Set<number>;
 }
 
 interface ChartContextType {
@@ -30,9 +31,11 @@ interface ChartContextType {
     min: number;
     max: number;
   };
+  activeEventLines: Set<number>;
   toggleStrategy: (strategy: Strategy) => void;
   toggleSignal: (signal: Signal) => void;
   updateChartState: (state: Partial<ChartState>) => void;
+  setActiveEventLines: (lines: Set<number>) => void;
 }
 
 const defaultChartState: ChartState = {
@@ -45,6 +48,7 @@ const defaultChartState: ChartState = {
     min: Date.now() - 30 * 24 * 60 * 60 * 1000,
     max: Date.now(),
   },
+  activeEventLines: new Set(),
 };
 
 const ChartContext = createContext<ChartContextType | undefined>(undefined);
@@ -70,6 +74,9 @@ export const ChartProvider: React.FC<{ children: ReactNode }> = ({
   const [chartExtremes, setChartExtremes] = useState(
     defaultChartState.chartExtremes
   );
+  const [activeEventLines, setActiveEventLines] = useState<Set<number>>(
+    defaultChartState.activeEventLines
+  );
 
   const toggleStrategy = useCallback((strategy: Strategy) => {
     setSelectedStrategies((prev) =>
@@ -88,7 +95,6 @@ export const ChartProvider: React.FC<{ children: ReactNode }> = ({
   }, []);
 
   const updateChartState = useCallback((state: Partial<ChartState>) => {
-    console.trace();
     if (state.selectedStock !== undefined)
       setSelectedStock(state.selectedStock);
     if (state.selectedStrategies !== undefined)
@@ -101,6 +107,8 @@ export const ChartProvider: React.FC<{ children: ReactNode }> = ({
       setSelectedChartType(state.selectedChartType);
     if (state.chartExtremes !== undefined)
       setChartExtremes(state.chartExtremes);
+    if (state.activeEventLines !== undefined)
+      setActiveEventLines(state.activeEventLines);
   }, []);
 
   return (
@@ -113,9 +121,11 @@ export const ChartProvider: React.FC<{ children: ReactNode }> = ({
         selectedGranularity,
         selectedChartType,
         chartExtremes,
+        activeEventLines,
         toggleStrategy,
         toggleSignal,
         updateChartState,
+        setActiveEventLines,
       }}
     >
       {children}
