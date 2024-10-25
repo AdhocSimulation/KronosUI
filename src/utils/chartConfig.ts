@@ -97,17 +97,6 @@ export const getChartConfiguration = ({
         },
       },
     },
-    scrollbar: {
-      enabled: true,
-      barBackgroundColor: colorMode === "dark" ? "#4b5563" : "#e5e7eb",
-      barBorderColor: colorMode === "dark" ? "#6b7280" : "#d1d5db",
-      buttonBackgroundColor: colorMode === "dark" ? "#4b5563" : "#e5e7eb",
-      buttonBorderColor: colorMode === "dark" ? "#6b7280" : "#d1d5db",
-      trackBackgroundColor: colorMode === "dark" ? "#1f2937" : "#f3f4f6",
-      trackBorderColor: colorMode === "dark" ? "#374151" : "#e5e7eb",
-      rifleColor: colorMode === "dark" ? "#9ca3af" : "#6b7280",
-      buttonArrowColor: colorMode === "dark" ? "#9ca3af" : "#6b7280",
-    },
     yAxis: [
       {
         labels: {
