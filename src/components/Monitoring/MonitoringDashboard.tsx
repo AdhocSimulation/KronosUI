@@ -7,7 +7,6 @@ interface MonitoringDashboardProps {
   colorMode: "light" | "dark";
 }
 
-// Mock services for demonstration
 const mockServices: ServiceHealth[] = [
   {
     id: "1",
@@ -79,7 +78,6 @@ const MonitoringDashboard: React.FC<MonitoringDashboardProps> = ({
   const fetchServiceHealth = async (
     service: ServiceHealth
   ): Promise<HealthResponse> => {
-    // Mock API call - replace with actual API call
     await new Promise((resolve) => setTimeout(resolve, Math.random() * 1000));
 
     return {
@@ -125,13 +123,10 @@ const MonitoringDashboard: React.FC<MonitoringDashboardProps> = ({
 
   const refreshServices = async () => {
     setIsRefreshing(true);
-
-    // Mark all services as loading
     setServices((prev) =>
       prev.map((service) => ({ ...service, loading: true }))
     );
 
-    // Fetch health status for all services in parallel
     const updatedServices = await Promise.all(
       services.map(async (service) => {
         try {
@@ -156,7 +151,7 @@ const MonitoringDashboard: React.FC<MonitoringDashboardProps> = ({
     refreshServices();
 
     if (autoRefresh) {
-      const interval = setInterval(refreshServices, 30000); // Refresh every 30 seconds
+      const interval = setInterval(refreshServices, 30000);
       return () => clearInterval(interval);
     }
   }, [autoRefresh]);
@@ -171,7 +166,6 @@ const MonitoringDashboard: React.FC<MonitoringDashboardProps> = ({
         colorMode === "dark" ? "bg-gray-900" : "bg-gray-50"
       }`}
     >
-      {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <h1
           className={`text-2xl font-bold ${
@@ -234,7 +228,6 @@ const MonitoringDashboard: React.FC<MonitoringDashboardProps> = ({
         </div>
       </div>
 
-      {/* Service Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {filteredServices.map((service) => (
           <ServiceCard

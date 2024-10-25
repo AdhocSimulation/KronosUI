@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { ChevronDown, ChevronUp, ArrowUpDown } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 
 interface Position {
   id: string;
@@ -22,6 +21,7 @@ interface Position {
 interface PortfolioGridProps {
   colorMode: "light" | "dark";
   mode: "history" | "open";
+  onRowClick: (position: Position) => void;
 }
 
 const strategies = [
@@ -117,8 +117,11 @@ const generateMockPositions = (isHistory: boolean): Position[] => {
   return positions;
 };
 
-const PortfolioGrid: React.FC<PortfolioGridProps> = ({ colorMode, mode }) => {
-  const navigate = useNavigate();
+const PortfolioGrid: React.FC<PortfolioGridProps> = ({
+  colorMode,
+  mode,
+  onRowClick,
+}) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [sortField, setSortField] = useState<keyof Position | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
@@ -168,25 +171,6 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({ colorMode, mode }) => {
     });
 
     setPositions(filteredPositions);
-  };
-
-  const handleRowClick = (position: Position) => {
-    const executionDate = new Date(position.executionTime);
-    const startDate = new Date(executionDate);
-    const endDate = new Date(executionDate);
-    startDate.setDate(startDate.getDate() - 10);
-    endDate.setDate(endDate.getDate() + 10);
-
-    navigate("/chart", {
-      state: {
-        selectedStock: position.asset,
-        dateRange: {
-          start: startDate.getTime(),
-          end: endDate.getTime(),
-        },
-        selectedStrategy: position.strategy,
-      },
-    });
   };
 
   const formatNumber = (num: number, decimals: number = 2) => {
@@ -298,7 +282,7 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({ colorMode, mode }) => {
             {positions.map((position) => (
               <tr
                 key={position.id}
-                onClick={() => handleRowClick(position)}
+                onClick={() => onRowClick(position)}
                 className={`border-t ${
                   colorMode === "dark" ? "border-gray-700" : "border-gray-200"
                 } hover:bg-${

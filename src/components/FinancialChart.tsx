@@ -3,10 +3,8 @@ import Highcharts from "highcharts/highstock";
 import HighchartsReact from "highcharts-react-official";
 import { BarChart, CandlestickChart, LineChart } from "lucide-react";
 import {
-  Signal,
   SignalData,
   StockData,
-  Strategy,
   StrategyData,
   StrategyEvent,
 } from "../types/chart";
@@ -17,6 +15,7 @@ import AlertsSection from "./AlertsSection";
 import { fetchStockData } from "../utils/stockData";
 import { drawStrategyEvents } from "../utils/eventHelper";
 import { getChartConfiguration } from "../utils/chartConfig";
+import { useChart } from "../contexts/ChartContext";
 
 interface FinancialChartProps {
   colorMode: "light" | "dark";
@@ -99,21 +98,26 @@ const chartTypes = [
 ];
 
 function FinancialChart({ colorMode }: FinancialChartProps) {
-  const [selectedStock, setSelectedStock] = useState("AAPL");
+  const {
+    selectedStock,
+    setSelectedStock,
+    selectedStrategies,
+    selectedSignals,
+    selectedGranularity,
+    selectedChartType,
+    chartExtremes,
+    updateChartState,
+  } = useChart();
+
   const [stockData, setStockData] = useState<StockData[]>([]);
-  const [selectedIndicators, setSelectedIndicators] = useState<string[]>([]);
   const [isIndicatorsPopupOpen, setIsIndicatorsPopupOpen] = useState(false);
-  const [selectedChartType, setSelectedChartType] = useState("candlestick");
-  const [selectedGranularity, setSelectedGranularity] = useState("daily");
   const [events, setEvents] = useState<StrategyEvent[]>([]);
   const [activeEventLines, setActiveEventLines] = useState<Set<number>>(
     new Set()
   );
-  const [selectedStrategies, setSelectedStrategies] = useState<Strategy[]>([]);
   const [strategyData, setStrategyData] = useState<{
     [key: string]: StrategyData[];
   }>({});
-  const [selectedSignals, setSelectedSignals] = useState<Signal[]>([]);
   const [signalData, setSignalData] = useState<{ [key: string]: SignalData[] }>(
     {}
   );
@@ -148,37 +152,29 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
 
   useEffect(() => {
     if (selectedStrategies.length > 0) {
-      generateStrategyData();
+      const newStrategyData: { [key: string]: StrategyData[] } = {};
+      selectedStrategies.forEach((strategy) => {
+        newStrategyData[strategy.name] = stockData.map((data) => ({
+          date: data.date,
+          value: Math.random() * 2 - 1,
+        }));
+      });
+      setStrategyData(newStrategyData);
     }
   }, [selectedStrategies, stockData]);
 
   useEffect(() => {
     if (selectedSignals.length > 0) {
-      generateSignalData();
+      const newSignalData: { [key: string]: SignalData[] } = {};
+      selectedSignals.forEach((signal) => {
+        newSignalData[signal.name] = stockData.map((data) => ({
+          date: data.date,
+          value: Math.random() * 2 - 1,
+        }));
+      });
+      setSignalData(newSignalData);
     }
   }, [selectedSignals, stockData]);
-
-  const generateStrategyData = () => {
-    const newStrategyData: { [key: string]: StrategyData[] } = {};
-    selectedStrategies.forEach((strategy) => {
-      newStrategyData[strategy.name] = stockData.map((data) => ({
-        date: data.date,
-        value: Math.random() * 2 - 1, // Random value between -1 and 1
-      }));
-    });
-    setStrategyData(newStrategyData);
-  };
-
-  const generateSignalData = () => {
-    const newSignalData: { [key: string]: SignalData[] } = {};
-    selectedSignals.forEach((signal) => {
-      newSignalData[signal.name] = stockData.map((data) => ({
-        date: data.date,
-        value: Math.random() * 2 - 1, // Random value between -1 and 1
-      }));
-    });
-    setSignalData(newSignalData);
-  };
 
   const drawEvents = useCallback(
     (chart: Highcharts.Chart) => {
@@ -193,40 +189,16 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
     [events, colorMode, activeEventLines]
   );
 
-  const getInitialRange = useCallback(() => {
-    const now = Date.now();
-    switch (selectedGranularity) {
-      case "1min":
-      case "5min":
-      case "15min":
-        return { min: now - 24 * 60 * 60 * 1000, max: now }; // Last 24 hours
-      case "30min":
-      case "60min":
-        return { min: now - 72 * 60 * 60 * 1000, max: now }; // Last 72 hours
-      case "daily":
-        return { min: now - 30 * 24 * 60 * 60 * 1000, max: now }; // Last month
-      default:
-        return { min: now - 30 * 24 * 60 * 60 * 1000, max: now }; // Default to last month
-    }
-  }, [selectedGranularity]);
-
-  const [chartExtremes, setChartExtremes] = useState(getInitialRange());
-
-  useEffect(() => {
-    const newExtremes = getInitialRange();
-    setChartExtremes(newExtremes);
-    if (chartRef.current && chartRef.current.chart) {
-      chartRef.current.chart.xAxis[0].setExtremes(
-        newExtremes.min,
-        newExtremes.max,
-        true,
-        false
-      );
-    }
-  }, [selectedGranularity, getInitialRange]);
-
   const handleStockChange = (stock: string) => {
-    setSelectedStock(stock);
+    updateChartState({ selectedStock: stock });
+  };
+
+  const handleTimeGranularityChange = (granularity: string) => {
+    updateChartState({ selectedGranularity: granularity });
+  };
+
+  const handleChartTypeChange = (type: string) => {
+    updateChartState({ selectedChartType: type });
   };
 
   const chartConfiguration = getChartConfiguration({
@@ -255,14 +227,6 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
     };
   }
 
-  const handleStrategyChange = (strategies: Strategy[]) => {
-    setSelectedStrategies(strategies);
-  };
-
-  const handleSignalChange = (signals: Signal[]) => {
-    setSelectedSignals(signals);
-  };
-
   return (
     <div
       className={`w-full ${
@@ -272,17 +236,11 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
       }`}
     >
       <div className="flex">
-        {/* Left Panel - Chart and Alerts */}
         <div className="w-1/4 p-4">
-          <ChartSection
-            colorMode={colorMode}
-            onStrategyChange={handleStrategyChange}
-            onSignalChange={handleSignalChange}
-          />
+          <ChartSection colorMode={colorMode} />
           <AlertsSection colorMode={colorMode} />
         </div>
 
-        {/* Right Panel - Chart */}
         <div className="w-3/4 p-4">
           <ChartWithControls
             colorMode={colorMode}
@@ -295,8 +253,8 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
             isIndicatorsPopupOpen={isIndicatorsPopupOpen}
             setIsIndicatorsPopupOpen={setIsIndicatorsPopupOpen}
             handleStockChange={handleStockChange}
-            setSelectedTimeGranularity={setSelectedGranularity}
-            setSelectedChartType={setSelectedChartType}
+            setSelectedTimeGranularity={handleTimeGranularityChange}
+            setSelectedChartType={handleChartTypeChange}
             chartOptions={chartConfiguration}
             chartRef={chartRef}
             stockData={stockData}

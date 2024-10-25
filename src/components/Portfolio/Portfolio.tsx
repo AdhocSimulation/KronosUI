@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useChart } from "../../contexts/ChartContext";
 import SearchBar from "./SearchBar";
 import PortfolioGrid from "./PortfolioGrid";
 import Timeline from "./Timeline";
@@ -10,10 +12,28 @@ interface PortfolioProps {
   colorMode: "light" | "dark";
 }
 
+interface Position {
+  id: string;
+  executionTime: string;
+  asset: string;
+  quantity: number;
+  quoteCurrency: string;
+  price: number;
+  currentPrice: number;
+  direction: "Long" | "Short";
+  exchange: string;
+  currentValue: number;
+  pnl: number;
+  dayChange: number;
+  dayChangePercent: number;
+  strategy: string;
+}
+
 function Portfolio({ colorMode }: PortfolioProps) {
+  const navigate = useNavigate();
+  const { updateChartState } = useChart();
   const [selectedMode, setSelectedMode] = useState<"history" | "open">("open");
   const [selectedItem, setSelectedItem] = useState<any>(null);
-  const performanceData = generatePerformanceData();
 
   const mockEvents = [
     {
@@ -53,6 +73,29 @@ function Portfolio({ colorMode }: PortfolioProps) {
     });
   };
 
+  const handleRowClick = (position: Position) => {
+    const executionDate = new Date(position.executionTime);
+    const startDate = new Date(executionDate);
+    const endDate = new Date(executionDate);
+    startDate.setDate(startDate.getDate() - 10);
+    endDate.setDate(endDate.getDate() + 10);
+
+    updateChartState({
+      selectedStock: position.asset,
+      chartExtremes: {
+        min: startDate.getTime(),
+        max: endDate.getTime(),
+      },
+      selectedStrategies: [{ name: position.strategy }],
+      selectedSignals: [],
+      selectedGranularity: "daily",
+    });
+
+    navigate("/chart");
+  };
+
+  const performanceData = generatePerformanceData();
+
   return (
     <div
       className={`p-6 ${
@@ -60,7 +103,6 @@ function Portfolio({ colorMode }: PortfolioProps) {
       } min-h-screen`}
     >
       <div className="max-w-full mx-auto">
-        {/* Top Section */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex-1 max-w-2xl">
             <SearchBar
@@ -75,9 +117,7 @@ function Portfolio({ colorMode }: PortfolioProps) {
           )}
         </div>
 
-        {/* Main Content */}
         <div className="grid grid-cols-12 gap-6">
-          {/* Left Column - Portfolio Grid */}
           <div className="col-span-8">
             <div className="mb-6">
               <div
@@ -116,16 +156,18 @@ function Portfolio({ colorMode }: PortfolioProps) {
               </div>
             </div>
 
-            <PortfolioGrid colorMode={colorMode} mode={selectedMode} />
+            <PortfolioGrid
+              colorMode={colorMode}
+              mode={selectedMode}
+              onRowClick={handleRowClick}
+            />
           </div>
 
-          {/* Right Column - Timeline */}
           <div className="col-span-4">
             <Timeline colorMode={colorMode} events={mockEvents} />
           </div>
         </div>
 
-        {/* Performance Chart */}
         {selectedItem && (
           <div className="mt-6">
             <PerformanceChart
@@ -141,7 +183,6 @@ function Portfolio({ colorMode }: PortfolioProps) {
   );
 }
 
-// Helper function to generate mock performance data
 const generatePerformanceData = () => {
   const data = [];
   const startDate = new Date();

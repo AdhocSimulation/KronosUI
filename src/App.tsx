@@ -24,6 +24,7 @@ import Home from "./components/Home";
 import About from "./components/About";
 import Login from "./components/Login";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { ChartProvider } from "./contexts/ChartContext";
 import "./styles/chart.css";
 import Portfolio from "./components/Portfolio/Portfolio";
 import MonitoringDashboard from "./components/Monitoring/MonitoringDashboard";
@@ -38,9 +39,11 @@ function App() {
 
   return (
     <AuthProvider>
-      <Router>
-        <AppContent colorMode={colorMode} toggleColorMode={toggleColorMode} />
-      </Router>
+      <ChartProvider>
+        <Router>
+          <AppContent colorMode={colorMode} toggleColorMode={toggleColorMode} />
+        </Router>
+      </ChartProvider>
     </AuthProvider>
   );
 }
