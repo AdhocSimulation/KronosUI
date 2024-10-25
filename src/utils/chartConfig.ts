@@ -24,7 +24,7 @@ export const getChartConfiguration = ({
   return {
     chart: {
       backgroundColor: colorMode === "dark" ? "#1f2937" : "#ffffff",
-      height: "60%",
+      height: "58%",
       animation: false,
       panning: {
         enabled: true,
