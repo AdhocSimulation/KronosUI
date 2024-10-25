@@ -64,4 +64,5 @@ export interface ChartConfigOptions {
   chartExtremes: { min: number; max: number };
   strategyData: { [key: string]: StrategyData[] };
   selectedStrategies: Strategy[];
+  activeEventLines: Set<number>;
 }
