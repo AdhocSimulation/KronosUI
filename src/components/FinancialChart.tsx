@@ -265,7 +265,11 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
       ...chartConfiguration.xAxis[0].events,
       afterSetExtremes: function (e: Highcharts.AxisSetExtremesEventObject) {
         if (e.trigger === "syncExtremes") return;
-        if (e.trigger !== "navigator" && e.trigger !== "mousewheel") {
+        if (
+          e.trigger !== "zoom" &&
+          e.trigger !== "navigator" &&
+          e.trigger !== "mousewheel"
+        ) {
           return;
         }
         if (e.min !== undefined && e.max !== undefined) {
@@ -278,7 +282,11 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
       ...chartConfiguration.xAxis.events,
       afterSetExtremes: function (e: Highcharts.AxisSetExtremesEventObject) {
         if (e.trigger === "syncExtremes") return;
-        if (e.trigger !== "navigator" && e.trigger !== "mousewheel") {
+        if (
+          e.trigger !== "zoom" &&
+          e.trigger !== "navigator" &&
+          e.trigger !== "mousewheel"
+        ) {
           return;
         }
         if (e.min !== undefined && e.max !== undefined) {

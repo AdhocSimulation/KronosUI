@@ -41,15 +41,13 @@ const ChartWithControls: React.FC<ChartWithControlsProps> = ({
   stockData,
   isLoading,
 }) => {
-  console.log("INside");
-  console.log({ ...chartOptions });
   return (
     <div
       className={`${
         colorMode === "dark" ? "bg-gray-800" : "bg-white"
       } rounded-lg shadow w-full`}
     >
-      <div className="p-4 pb-0">
+      <div className="pb-0">
         <ChartControls
           colorMode={colorMode}
           stocks={stocks}
@@ -65,7 +63,7 @@ const ChartWithControls: React.FC<ChartWithControlsProps> = ({
           setSelectedChartType={setSelectedChartType}
         />
       </div>
-      <div className="px-4">
+      <div className="px-2">
         <ChartSeriesSummary
           colorMode={colorMode}
           selectedSeries={selectedStock}
