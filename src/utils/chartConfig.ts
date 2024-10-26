@@ -113,6 +113,22 @@ export const getChartConfiguration = ({
         resize: {
           enabled: true,
         },
+        crosshair: {
+          label: {
+            enabled: true,
+            format: "{value:.2f}",
+            backgroundColor: colorMode === "dark" ? "#374151" : "#ffffff",
+            style: {
+              color: colorMode === "dark" ? "#e5e7eb" : "#111827",
+            },
+          },
+          color:
+            colorMode === "dark"
+              ? "rgba(255, 150, 150, 0.7)"
+              : "rgba(0, 0, 0, 0.3)",
+          dashStyle: "Dash",
+          snap: false,
+        },
       },
       {
         labels: {
@@ -128,6 +144,22 @@ export const getChartConfiguration = ({
         height: "10%",
         offset: 0,
         lineWidth: 2,
+        crosshair: {
+          label: {
+            enabled: true,
+            format: "{value:,.0f}",
+            backgroundColor: colorMode === "dark" ? "#374151" : "#ffffff",
+            style: {
+              color: colorMode === "dark" ? "#e5e7eb" : "#111827",
+            },
+          },
+          color:
+            colorMode === "dark"
+              ? "rgba(255, 150, 150, 0.7)"
+              : "rgba(0, 0, 0, 0.3)",
+          dashStyle: "Dash",
+          snap: false,
+        },
       },
       ...(selectedStrategies.length > 0
         ? [
@@ -147,6 +179,22 @@ export const getChartConfiguration = ({
               lineWidth: 2,
               min: -1,
               max: 1,
+              crosshair: {
+                label: {
+                  enabled: true,
+                  format: "{value:.2f}",
+                  backgroundColor: colorMode === "dark" ? "#374151" : "#ffffff",
+                  style: {
+                    color: colorMode === "dark" ? "#e5e7eb" : "#111827",
+                  },
+                },
+                color:
+                  colorMode === "dark"
+                    ? "rgba(255, 150, 150, 0.7)"
+                    : "rgba(0, 0, 0, 0.3)",
+                dashStyle: "Dash",
+                snap: false,
+              },
             },
           ]
         : []),
@@ -171,6 +219,22 @@ export const getChartConfiguration = ({
               lineWidth: 2,
               min: -1,
               max: 1,
+              crosshair: {
+                label: {
+                  enabled: true,
+                  format: "{value:.2f}",
+                  backgroundColor: colorMode === "dark" ? "#374151" : "#ffffff",
+                  style: {
+                    color: colorMode === "dark" ? "#e5e7eb" : "#111827",
+                  },
+                },
+                color:
+                  colorMode === "dark"
+                    ? "rgba(255, 150, 150, 0.7)"
+                    : "rgba(0, 0, 0, 0.3)",
+                dashStyle: "Dash",
+                snap: false,
+              },
             },
           ]
         : []),
