@@ -16,6 +16,7 @@ import {
   LogOut,
   Briefcase,
   Code,
+  Calendar,
   LayoutDashboard,
   Activity,
 } from "lucide-react";
@@ -25,10 +26,12 @@ import About from "./components/About";
 import Login from "./components/Login";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ChartProvider } from "./contexts/ChartContext";
+import { EventsProvider } from "./contexts/EventsContext";
 import "./styles/chart.css";
 import Portfolio from "./components/Portfolio/Portfolio";
 import MonitoringDashboard from "./components/Monitoring/MonitoringDashboard";
 import ServiceDetails from "./components/Monitoring/ServiceDetails";
+import EventsCalendar from "./components/Events/EventsCalendar";
 
 function App() {
   const [colorMode, setColorMode] = React.useState<"light" | "dark">("light");
@@ -40,9 +43,14 @@ function App() {
   return (
     <AuthProvider>
       <ChartProvider>
-        <Router>
-          <AppContent colorMode={colorMode} toggleColorMode={toggleColorMode} />
-        </Router>
+        <EventsProvider>
+          <Router>
+            <AppContent
+              colorMode={colorMode}
+              toggleColorMode={toggleColorMode}
+            />
+          </Router>
+        </EventsProvider>
       </ChartProvider>
     </AuthProvider>
   );
@@ -71,6 +79,12 @@ function AppContent({
       path: "/strategy-builder",
       label: "Strategy Builder",
       icon: Code,
+      requireAuth: true,
+    },
+    {
+      path: "/events",
+      label: "Events",
+      icon: Calendar,
       requireAuth: true,
     },
     {
@@ -182,6 +196,14 @@ function AppContent({
             element={
               <ProtectedRoute>
                 <div>Strategy Builder content</div>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/events"
+            element={
+              <ProtectedRoute>
+                <EventsCalendar colorMode={colorMode} />
               </ProtectedRoute>
             }
           />
