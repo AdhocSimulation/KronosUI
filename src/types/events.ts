@@ -1,9 +1,4 @@
-export type EventType =
-  | "ICO"
-  | "Conference"
-  | "Maintenance"
-  | "Release"
-  | "Airdrop";
+export type EventType = 'ICO' | 'Conference' | 'Maintenance' | 'Release' | 'Airdrop';
 
 export interface Event {
   id: string;
@@ -16,6 +11,10 @@ export interface Event {
   quoteCurrency?: string;
   exchange?: string;
   link?: string;
+  location?: string;
+  speakers?: string[];
+  version?: string;
+  changelog?: string[];
 }
 
 export interface EventsState {
