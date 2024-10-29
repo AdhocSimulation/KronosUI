@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, ReactNode } from "react";
+import React, { createContext, useContext, useReducer, ReactNode, useCallback } from "react";
 import { Event, EventsState } from "../types/events";
 import { eventsService } from "../services/eventsService";
 
@@ -61,7 +61,9 @@ function eventsReducer(state: EventsState, action: EventsAction): EventsState {
 export function EventsProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(eventsReducer, initialState);
 
-  const fetchEvents = async () => {
+  const fetchEvents = useCallback(async () => {
+    if (state.loading) return; // Prevent multiple simultaneous fetches
+    
     dispatch({ type: "FETCH_EVENTS_START" });
     try {
       const events = await eventsService.getEvents();
@@ -69,11 +71,10 @@ export function EventsProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       dispatch({
         type: "FETCH_EVENTS_ERROR",
-        payload:
-          error instanceof Error ? error.message : "Failed to fetch events",
+        payload: error instanceof Error ? error.message : "Failed to fetch events",
       });
     }
-  };
+  }, [state.loading]);
 
   const addEvent = async (event: Omit<Event, "id">) => {
     try {
@@ -94,8 +95,7 @@ export function EventsProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       dispatch({
         type: "SET_ERROR",
-        payload:
-          error instanceof Error ? error.message : "Failed to update event",
+        payload: error instanceof Error ? error.message : "Failed to update event",
       });
     }
   };
@@ -107,8 +107,7 @@ export function EventsProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       dispatch({
         type: "SET_ERROR",
-        payload:
-          error instanceof Error ? error.message : "Failed to delete event",
+        payload: error instanceof Error ? error.message : "Failed to delete event",
       });
     }
   };
