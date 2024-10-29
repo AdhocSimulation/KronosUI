@@ -32,6 +32,7 @@ import Portfolio from "./components/Portfolio/Portfolio";
 import MonitoringDashboard from "./components/Monitoring/MonitoringDashboard";
 import ServiceDetails from "./components/Monitoring/ServiceDetails";
 import EventsCalendar from "./components/Events/EventsCalendar";
+import BacktestDashboard from "./components/StrategyBuilder/BacktestDashboard";
 
 function App() {
   const [colorMode, setColorMode] = React.useState<"light" | "dark">("light");
@@ -195,7 +196,7 @@ function AppContent({
             path="/strategy-builder"
             element={
               <ProtectedRoute>
-                <div>Strategy Builder content</div>
+                <BacktestDashboard colorMode={colorMode} />
               </ProtectedRoute>
             }
           />
