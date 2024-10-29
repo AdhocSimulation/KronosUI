@@ -1,5 +1,6 @@
 import axios from "axios";
 import { StockData } from "../types/chart";
+import { utcToZonedTime, zonedTimeToUtc } from 'date-fns-tz';
 
 export const fetchStockData = async (
   stock: string,
@@ -41,7 +42,7 @@ export const generatePlaceholderData = (): StockData[] => {
   const data: StockData[] = [];
   const startDate = new Date();
   startDate.setFullYear(startDate.getFullYear() - 1);
-
+  startDate.setHours(2, 0, 0);
   for (let i = 0; i < 365; i++) {
     const date = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000);
     const basePrice = 100 + Math.sin(i / 10) * 20 + Math.random() * 10;
