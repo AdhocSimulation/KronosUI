@@ -131,6 +131,57 @@
   background-color: transparent !important;
 }
 
+/* Event Type Colors */
+.rbc-event.event-ICO {
+  background-color: #8b5cf6 !important;
+  border-color: #7c3aed !important;
+}
+
+.rbc-event.event-Conference {
+  background-color: #3b82f6 !important;
+  border-color: #2563eb !important;
+}
+
+.rbc-event.event-Maintenance {
+  background-color: #f59e0b !important;
+  border-color: #d97706 !important;
+}
+
+.rbc-event.event-Release {
+  background-color: #10b981 !important;
+  border-color: #059669 !important;
+}
+
+.rbc-event.event-Airdrop {
+  background-color: #ef4444 !important;
+  border-color: #dc2626 !important;
+}
+
+.dark .rbc-event.event-ICO {
+  background-color: #7c3aed !important;
+  border-color: #6d28d9 !important;
+}
+
+.dark .rbc-event.event-Conference {
+  background-color: #2563eb !important;
+  border-color: #1d4ed8 !important;
+}
+
+.dark .rbc-event.event-Maintenance {
+  background-color: #d97706 !important;
+  border-color: #b45309 !important;
+}
+
+.dark .rbc-event.event-Release {
+  background-color: #059669 !important;
+  border-color: #047857 !important;
+}
+
+.dark .rbc-event.event-Airdrop {
+  background-color: #dc2626 !important;
+  border-color: #b91c1c !important;
+}
+
 /* React DatePicker Dark Mode Styles */
 .dark .react-datepicker {
   background-color: #1f2937;
