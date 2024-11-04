@@ -1,14 +1,21 @@
-import React from "react";
+import React, { useState } from "react";
+import {
+  RefreshCw,
+  Play,
+  ChevronDown,
+  ChevronUp,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { Parameter } from "../../types/backtest";
-import { RefreshCw, Play, AlertCircle } from "lucide-react";
 
 interface BacktestParametersProps {
   colorMode: "light" | "dark";
-  onRunBacktest: (parameters: Parameter[]) => void;
+  onRunBacktest: (parameterSets: Parameter[][]) => void;
   isBacktesting: boolean;
 }
 
-const defaultParameters: Parameter[] = [
+const defaultParameterSet: Parameter[] = [
   {
     name: "lookbackPeriod",
     value: 20,
@@ -55,36 +62,57 @@ const BacktestParameters: React.FC<BacktestParametersProps> = ({
   onRunBacktest,
   isBacktesting,
 }) => {
-  const [parameters, setParameters] =
-    React.useState<Parameter[]>(defaultParameters);
-  const [isValid, setIsValid] = React.useState(true);
+  const [parameterSets, setParameterSets] = useState<Parameter[][]>([
+    defaultParameterSet,
+  ]);
+  const [expandedSet, setExpandedSet] = useState<number | null>(0);
 
   const handleParameterChange = (
-    index: number,
+    setIndex: number,
+    paramIndex: number,
     value: number | string | boolean
   ) => {
-    const newParameters = [...parameters];
-    newParameters[index] = { ...newParameters[index], value };
+    const newParameterSets = [...parameterSets];
+    newParameterSets[setIndex] = [...newParameterSets[setIndex]];
+    newParameterSets[setIndex][paramIndex] = {
+      ...newParameterSets[setIndex][paramIndex],
+      value,
+    };
+    setParameterSets(newParameterSets);
+  };
 
-    // Validate numeric parameters
-    const valid = newParameters.every((param) => {
-      if (param.type === "number") {
-        const numValue = param.value as number;
-        return (
-          numValue >= (param.min || -Infinity) &&
-          numValue <= (param.max || Infinity)
-        );
-      }
-      return true;
-    });
+  const handleAddParameterSet = () => {
+    setParameterSets([
+      ...parameterSets,
+      JSON.parse(JSON.stringify(defaultParameterSet)),
+    ]);
+    setExpandedSet(parameterSets.length);
+  };
 
-    setIsValid(valid);
-    setParameters(newParameters);
+  const handleRemoveParameterSet = (index: number) => {
+    const newParameterSets = parameterSets.filter((_, i) => i !== index);
+    setParameterSets(newParameterSets);
+    if (expandedSet === index) {
+      setExpandedSet(null);
+    } else if (expandedSet !== null && expandedSet > index) {
+      setExpandedSet(expandedSet - 1);
+    }
   };
 
   const handleReset = () => {
-    setParameters(defaultParameters);
-    setIsValid(true);
+    setParameterSets([JSON.parse(JSON.stringify(defaultParameterSet))]);
+    setExpandedSet(0);
+  };
+
+  const getParameterSetColor = (index: number): string => {
+    const colors = [
+      "border-blue-500",
+      "border-green-500",
+      "border-yellow-500",
+      "border-purple-500",
+      "border-pink-500",
+    ];
+    return colors[index % colors.length];
   };
 
   return (
@@ -96,103 +124,180 @@ const BacktestParameters: React.FC<BacktestParametersProps> = ({
       <h2 className="text-xl font-bold mb-4">Backtest Parameters</h2>
 
       <div className="space-y-4">
-        {parameters.map((param, index) => (
-          <div key={param.name}>
-            <label className="block text-sm font-medium mb-1">
-              {param.name}
-              {param.description && (
-                <span
-                  className={`ml-2 text-xs ${
-                    colorMode === "dark" ? "text-gray-400" : "text-gray-500"
-                  }`}
-                >
-                  ({param.description})
-                </span>
-              )}
-            </label>
-
-            {param.type === "number" && (
+        {parameterSets.map((paramSet, setIndex) => (
+          <div
+            key={setIndex}
+            className={`border-l-4 ${getParameterSetColor(
+              setIndex
+            )} rounded-lg overflow-hidden`}
+          >
+            <div
+              className={`p-2 ${
+                colorMode === "dark" ? "bg-gray-700" : "bg-gray-100"
+              } flex items-center justify-between cursor-pointer`}
+              onClick={() =>
+                setExpandedSet(expandedSet === setIndex ? null : setIndex)
+              }
+            >
               <div className="flex items-center space-x-2">
-                <input
-                  type="range"
-                  min={param.min}
-                  max={param.max}
-                  step={param.step}
-                  value={param.value as number}
-                  onChange={(e) =>
-                    handleParameterChange(index, parseFloat(e.target.value))
-                  }
-                  className="flex-1"
-                />
-                <input
-                  type="number"
-                  value={param.value as number}
-                  onChange={(e) =>
-                    handleParameterChange(index, parseFloat(e.target.value))
-                  }
-                  min={param.min}
-                  max={param.max}
-                  step={param.step}
-                  className={`w-20 px-2 py-1 rounded ${
-                    colorMode === "dark"
-                      ? "bg-gray-700 text-white"
-                      : "bg-gray-100 text-gray-900"
-                  }`}
-                />
+                <span className="text-sm font-medium">
+                  Parameter Set {setIndex + 1}
+                </span>
+                {expandedSet !== setIndex && (
+                  <span className="text-xs opacity-60">
+                    (LP: {paramSet[0].value}, PT: {paramSet[1].value}%, SL:{" "}
+                    {paramSet[2].value}%)
+                  </span>
+                )}
               </div>
-            )}
+              <div className="flex items-center space-x-2">
+                {parameterSets.length > 1 && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveParameterSet(setIndex);
+                    }}
+                    className="p-1 rounded-full hover:bg-opacity-80"
+                  >
+                    <Trash2 className="w-4 h-4 text-red-500" />
+                  </button>
+                )}
+                {expandedSet === setIndex ? (
+                  <ChevronUp className="w-4 h-4" />
+                ) : (
+                  <ChevronDown className="w-4 h-4" />
+                )}
+              </div>
+            </div>
 
-            {param.type === "boolean" && (
-              <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={param.value as boolean}
-                  onChange={(e) =>
-                    handleParameterChange(index, e.target.checked)
-                  }
-                  className="rounded text-blue-500 focus:ring-blue-500"
-                />
-                <span>Enabled</span>
-              </label>
-            )}
+            {expandedSet === setIndex && (
+              <div className="p-4 space-y-4">
+                {paramSet.map((param, paramIndex) => (
+                  <div key={param.name}>
+                    <label className="block text-sm font-medium mb-1">
+                      {param.name}
+                      {param.description && (
+                        <span
+                          className={`ml-2 text-xs ${
+                            colorMode === "dark"
+                              ? "text-gray-400"
+                              : "text-gray-500"
+                          }`}
+                        >
+                          ({param.description})
+                        </span>
+                      )}
+                    </label>
 
-            {param.type === "string" && (
-              <select
-                value={param.value as string}
-                onChange={(e) => handleParameterChange(index, e.target.value)}
-                className={`w-full px-3 py-2 rounded ${
-                  colorMode === "dark"
-                    ? "bg-gray-700 text-white"
-                    : "bg-gray-100 text-gray-900"
-                }`}
-              >
-                <option value="1m">1 minute</option>
-                <option value="5m">5 minutes</option>
-                <option value="15m">15 minutes</option>
-                <option value="1h">1 hour</option>
-                <option value="4h">4 hours</option>
-                <option value="1d">1 day</option>
-              </select>
+                    {param.type === "number" && (
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="range"
+                          min={param.min}
+                          max={param.max}
+                          step={param.step}
+                          value={param.value as number}
+                          onChange={(e) =>
+                            handleParameterChange(
+                              setIndex,
+                              paramIndex,
+                              parseFloat(e.target.value)
+                            )
+                          }
+                          className="flex-1"
+                        />
+                        <input
+                          type="number"
+                          value={param.value as number}
+                          onChange={(e) =>
+                            handleParameterChange(
+                              setIndex,
+                              paramIndex,
+                              parseFloat(e.target.value)
+                            )
+                          }
+                          min={param.min}
+                          max={param.max}
+                          step={param.step}
+                          className={`w-20 px-2 py-1 rounded ${
+                            colorMode === "dark"
+                              ? "bg-gray-700 text-white"
+                              : "bg-gray-100 text-gray-900"
+                          }`}
+                        />
+                      </div>
+                    )}
+
+                    {param.type === "boolean" && (
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={param.value as boolean}
+                          onChange={(e) =>
+                            handleParameterChange(
+                              setIndex,
+                              paramIndex,
+                              e.target.checked
+                            )
+                          }
+                          className="rounded text-blue-500 focus:ring-blue-500"
+                        />
+                        <span>Enabled</span>
+                      </label>
+                    )}
+
+                    {param.type === "string" && (
+                      <select
+                        value={param.value as string}
+                        onChange={(e) =>
+                          handleParameterChange(
+                            setIndex,
+                            paramIndex,
+                            e.target.value
+                          )
+                        }
+                        className={`w-full px-3 py-2 rounded ${
+                          colorMode === "dark"
+                            ? "bg-gray-700 text-white"
+                            : "bg-gray-100 text-gray-900"
+                        }`}
+                      >
+                        <option value="1m">1 minute</option>
+                        <option value="5m">5 minutes</option>
+                        <option value="15m">15 minutes</option>
+                        <option value="1h">1 hour</option>
+                        <option value="4h">4 hours</option>
+                        <option value="1d">1 day</option>
+                      </select>
+                    )}
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         ))}
-      </div>
 
-      {!isValid && (
-        <div className="mt-4 p-2 rounded bg-red-100 text-red-600 flex items-center space-x-2">
-          <AlertCircle className="w-4 h-4" />
-          <span className="text-sm">
-            Some parameters are outside valid ranges
-          </span>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={handleAddParameterSet}
+            className={`flex items-center space-x-1 px-3 py-1 rounded ${
+              colorMode === "dark"
+                ? "bg-gray-700 hover:bg-gray-600"
+                : "bg-gray-100 hover:bg-gray-200"
+            }`}
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add Parameter Set</span>
+          </button>
         </div>
-      )}
+      </div>
 
       <div className="mt-6 flex space-x-3">
         <button
-          onClick={() => onRunBacktest(parameters)}
-          disabled={!isValid || isBacktesting}
+          onClick={() => onRunBacktest(parameterSets)}
+          disabled={isBacktesting}
           className={`flex-1 py-2 px-4 rounded flex items-center justify-center space-x-2 ${
-            !isValid || isBacktesting
+            isBacktesting
               ? "bg-gray-400 cursor-not-allowed"
               : colorMode === "dark"
               ? "bg-blue-600 hover:bg-blue-700"

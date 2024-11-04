@@ -5,8 +5,8 @@ import TradeHistory from "./TradeHistory";
 import BacktestChart from "./BacktestChart";
 import AssetChart from "./AssetChart";
 import InputParameters from "./InputParameters";
+import BacktestTabs from "./BacktestTabs";
 import { BacktestResult, Trade, Parameter } from "../../types/backtest";
-import { ChevronDown, ChevronUp } from "lucide-react";
 
 interface BacktestDashboardProps {
   colorMode: "light" | "dark";
@@ -14,45 +14,52 @@ interface BacktestDashboardProps {
 
 const BacktestDashboard: React.FC<BacktestDashboardProps> = ({ colorMode }) => {
   const [isBacktesting, setIsBacktesting] = useState(false);
-  const [backtestResult, setBacktestResult] = useState<BacktestResult | null>(
-    null
-  );
+  const [backtestResults, setBacktestResults] = useState<BacktestResult[]>([]);
   const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null);
-  const [isTradeHistoryCollapsed, setIsTradeHistoryCollapsed] = useState(false);
-  const [selectedAsset, setSelectedAsset] = useState("BTCUSDT");
+  const [selectedAssets, setSelectedAssets] = useState<string[]>(["BTCUSDT"]);
+  const [activeResultIndex, setActiveResultIndex] = useState(0);
 
-  const handleRunBacktest = async (parameters: Parameter[]) => {
+  const handleAssetChange = (assets: string[]) => {
+    setSelectedAssets(assets);
+  };
+
+  const handleRunBacktest = async (parameterSets: Parameter[][]) => {
     setIsBacktesting(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const results = await Promise.all(
+        selectedAssets.flatMap((asset) =>
+          parameterSets.map(async (parameters) => {
+            await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      // Mock backtest result
-      const result: BacktestResult = {
-        trades: generateMockTrades(selectedAsset),
-        metrics: {
-          totalReturn: 45.32,
-          sharpeRatio: 1.8,
-          maxDrawdown: -15.4,
-          winRate: 62.5,
-          profitFactor: 2.1,
-          averageTrade: 125.45,
-          totalTrades: 248,
-          profitableTrades: 155,
-          lossTrades: 93,
-          averageWin: 245.67,
-          averageLoss: -115.89,
-          largestWin: 1245.67,
-          largestLoss: -678.9,
-          averageHoldingPeriod: "2.5 days",
-          commissions: 456.78,
-        },
-        equity: generateEquityCurve(),
-        parameters,
-        asset: selectedAsset,
-      };
+            return {
+              trades: generateMockTrades(asset),
+              metrics: {
+                totalReturn: 45.32 + (Math.random() * 20 - 10),
+                sharpeRatio: 1.8 + (Math.random() * 0.4 - 0.2),
+                maxDrawdown: -15.4 + (Math.random() * 5 - 2.5),
+                winRate: 62.5 + (Math.random() * 10 - 5),
+                profitFactor: 2.1 + (Math.random() * 0.4 - 0.2),
+                averageTrade: 125.45 + (Math.random() * 20 - 10),
+                totalTrades: 248,
+                profitableTrades: 155,
+                lossTrades: 93,
+                averageWin: 245.67 + (Math.random() * 40 - 20),
+                averageLoss: -115.89 + (Math.random() * 20 - 10),
+                largestWin: 1245.67,
+                largestLoss: -678.9,
+                averageHoldingPeriod: "2.5 days",
+                commissions: 456.78,
+              },
+              equity: generateEquityCurve(),
+              parameters,
+              asset,
+            };
+          })
+        )
+      );
 
-      setBacktestResult(result);
+      setBacktestResults(results);
+      setActiveResultIndex(0);
     } catch (error) {
       console.error("Backtest failed:", error);
     } finally {
@@ -64,10 +71,12 @@ const BacktestDashboard: React.FC<BacktestDashboardProps> = ({ colorMode }) => {
     setSelectedTrade(trade);
   };
 
-  const handleAssetChange = (asset: string) => {
-    setSelectedAsset(asset);
-    setBacktestResult(null);
-    setSelectedTrade(null);
+  const handleTabClose = (index: number) => {
+    const newResults = backtestResults.filter((_, i) => i !== index);
+    setBacktestResults(newResults);
+    if (activeResultIndex >= newResults.length) {
+      setActiveResultIndex(Math.max(0, newResults.length - 1));
+    }
   };
 
   return (
@@ -76,10 +85,10 @@ const BacktestDashboard: React.FC<BacktestDashboardProps> = ({ colorMode }) => {
     >
       <div className="grid grid-cols-12 gap-6">
         {/* Left Sidebar */}
-        <div className="col-span-3 space-y-6">
+        <div className="col-span-3">
           <InputParameters
             colorMode={colorMode}
-            selectedAsset={selectedAsset}
+            selectedAsset={selectedAssets[0]}
             onAssetChange={handleAssetChange}
           />
           <BacktestParameters
@@ -91,82 +100,71 @@ const BacktestDashboard: React.FC<BacktestDashboardProps> = ({ colorMode }) => {
 
         {/* Main Content */}
         <div className="col-span-9 space-y-6">
-          {/* Asset Chart */}
-          <div
-            className={`rounded-lg ${
-              colorMode === "dark" ? "bg-gray-800" : "bg-white"
-            } p-6`}
-          >
-            <h2 className="text-xl font-bold mb-4">Asset Price Chart</h2>
-            <AssetChart
-              colorMode={colorMode}
-              asset={selectedAsset}
-              selectedTrade={selectedTrade}
-            />
-          </div>
-
-          <div className="grid grid-cols-12 gap-6">
-            {/* Equity Chart */}
-            <div
-              className={`col-span-8 rounded-lg ${
-                colorMode === "dark" ? "bg-gray-800" : "bg-white"
-              } p-6`}
-            >
-              <h2 className="text-xl font-bold mb-4">Equity Curve</h2>
-              <BacktestChart
+          {backtestResults.length > 0 && (
+            <>
+              {/* Results Tabs */}
+              <BacktestTabs
                 colorMode={colorMode}
-                equityData={backtestResult?.equity || []}
-                selectedTrade={selectedTrade}
+                results={backtestResults}
+                activeTab={activeResultIndex}
+                onTabChange={setActiveResultIndex}
+                onTabClose={handleTabClose}
               />
-            </div>
 
-            {/* Results Section */}
-            {backtestResult && (
-              <div
-                className={`col-span-4 rounded-lg ${
-                  colorMode === "dark" ? "bg-gray-800" : "bg-white"
-                } p-6`}
-              >
-                <BacktestResults
-                  colorMode={colorMode}
-                  result={backtestResult}
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Trade History Section */}
-          {backtestResult && (
-            <div
-              className={`rounded-lg ${
-                colorMode === "dark" ? "bg-gray-800" : "bg-white"
-              }`}
-            >
-              <div
-                className="p-4 flex justify-between items-center cursor-pointer hover:bg-opacity-80"
-                onClick={() =>
-                  setIsTradeHistoryCollapsed(!isTradeHistoryCollapsed)
-                }
-              >
-                <h2 className="text-xl font-bold">Trade History</h2>
-                {isTradeHistoryCollapsed ? (
-                  <ChevronDown className="w-5 h-5" />
-                ) : (
-                  <ChevronUp className="w-5 h-5" />
-                )}
-              </div>
-
-              {!isTradeHistoryCollapsed && (
-                <div className="p-6 pt-0">
-                  <TradeHistory
+              <div className="grid grid-cols-3 gap-6">
+                {/* Asset Chart */}
+                <div
+                  className={`col-span-2 rounded-lg ${
+                    colorMode === "dark" ? "bg-gray-800" : "bg-white"
+                  } p-6`}
+                >
+                  <AssetChart
                     colorMode={colorMode}
-                    trades={backtestResult.trades}
-                    onTradeSelect={handleTradeSelect}
+                    asset={backtestResults[activeResultIndex].asset}
                     selectedTrade={selectedTrade}
                   />
                 </div>
-              )}
-            </div>
+
+                {/* Results Summary */}
+                <div
+                  className={`rounded-lg ${
+                    colorMode === "dark" ? "bg-gray-800" : "bg-white"
+                  } p-6`}
+                >
+                  <BacktestResults
+                    colorMode={colorMode}
+                    result={backtestResults[activeResultIndex]}
+                  />
+                </div>
+              </div>
+
+              {/* Equity Chart */}
+              <div
+                className={`rounded-lg ${
+                  colorMode === "dark" ? "bg-gray-800" : "bg-white"
+                } p-6`}
+              >
+                <BacktestChart
+                  colorMode={colorMode}
+                  equityData={backtestResults[activeResultIndex].equity}
+                  selectedTrade={selectedTrade}
+                />
+              </div>
+
+              {/* Trade History */}
+              <div
+                className={`rounded-lg ${
+                  colorMode === "dark" ? "bg-gray-800" : "bg-white"
+                } p-6`}
+              >
+                <TradeHistory
+                  colorMode={colorMode}
+                  trades={backtestResults[activeResultIndex].trades}
+                  onTradeSelect={handleTradeSelect}
+                  selectedTrade={selectedTrade}
+                />
+              </div>
+            </>
           )}
         </div>
       </div>
@@ -174,7 +172,7 @@ const BacktestDashboard: React.FC<BacktestDashboardProps> = ({ colorMode }) => {
   );
 };
 
-// Helper functions for mock data
+// Helper functions remain the same
 const generateMockTrades = (asset: string): Trade[] => {
   const trades: Trade[] = [];
   const startDate = new Date(2023, 0, 1);
@@ -188,7 +186,7 @@ const generateMockTrades = (asset: string): Trade[] => {
     const entryPrice = 100 + Math.random() * 50;
     const exitPrice = entryPrice * (1 + (Math.random() * 0.2 - 0.1));
     const quantity = Math.round(Math.random() * 100);
-    const commission = quantity * (entryPrice + exitPrice) * 0.001; // 0.1% commission per trade
+    const commission = Math.random() * 10;
 
     trades.push({
       id: `trade-${i}`,
