@@ -1,12 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Plus, Trash2, Save } from "lucide-react";
-import {
-  Strategy,
-  StrategyExpression,
-  TimeGranularity,
-  PriceType,
-  Measure,
-} from "../../types/strategy";
+import { Strategy, StrategyExpression } from "../../types/strategy";
 import ExpressionBuilder from "./ExpressionBuilder";
 
 interface BuildStrategyProps {
@@ -15,6 +9,9 @@ interface BuildStrategyProps {
   onSave: (strategy: Omit<Strategy, "id" | "createdAt" | "updatedAt">) => void;
   onClose: () => void;
 }
+
+const expressionRegex =
+  /^(Open|High|Low|Close)\[(1m|5m|30m|1h)\]\.(Sma|Ema|Rsi|Macd|BollingerBands)\[\d+\]$/;
 
 const BuildStrategy: React.FC<BuildStrategyProps> = ({
   colorMode,
@@ -30,15 +27,84 @@ const BuildStrategy: React.FC<BuildStrategyProps> = ({
     selectedStrategy?.expressions || [{ id: "1", expression: "", weight: 1.0 }]
   );
   const [fullExpression, setFullExpression] = useState("");
+  const [isValidExpression, setIsValidExpression] = useState(true);
+  const [isTypingFullExpression, setIsTypingFullExpression] = useState(false);
 
+  // Update full expression when components change
   useEffect(() => {
-    // Build full expression when individual expressions change
-    const expr = expressions
-      .filter((e) => e.expression.trim() !== "")
-      .map((e) => `(${e.expression}) * ${e.weight}`)
-      .join(" + ");
-    setFullExpression(expr);
-  }, [expressions]);
+    if (!isTypingFullExpression) {
+      const expr = expressions
+        .filter((e) => e.expression.trim() !== "")
+        .map((e) => `(${e.expression}) * ${e.weight}`)
+        .join(" + ");
+      setFullExpression(expr);
+      validateExpression(expr);
+    }
+  }, [expressions, isTypingFullExpression]);
+
+  const validateExpression = (expr: string): boolean => {
+    if (!expr.trim()) return true;
+
+    try {
+      // Split by + and handle potential spaces
+      const terms = expr.split("+").map((term) => term.trim());
+
+      return terms.every((term) => {
+        const match = term.match(/\((.*?)\)\s*\*\s*([-]?\d*\.?\d+)/);
+        if (!match) return false;
+
+        const [, expression] = match;
+        return expressionRegex.test(expression.trim());
+      });
+    } catch (error) {
+      return false;
+    }
+  };
+
+  const parseFullExpression = (expr: string) => {
+    try {
+      const terms = expr.split("+").map((term) => term.trim());
+
+      const newExpressions: StrategyExpression[] = terms.map((term) => {
+        const match = term.match(/\((.*?)\)\s*\*\s*([-]?\d*\.?\d+)/);
+        if (!match) throw new Error("Invalid term format");
+
+        const [, expression, weightStr] = match;
+        const weight = parseFloat(weightStr);
+
+        if (!expressionRegex.test(expression.trim())) {
+          throw new Error("Invalid expression format");
+        }
+
+        return {
+          id: Math.random().toString(36).substr(2, 9),
+          expression: expression.trim(),
+          weight,
+        };
+      });
+
+      setExpressions(newExpressions);
+      setIsValidExpression(true);
+    } catch (error) {
+      setIsValidExpression(false);
+    }
+  };
+
+  const handleFullExpressionChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setIsTypingFullExpression(true);
+    const newExpression = e.target.value;
+    setFullExpression(newExpression);
+    setIsValidExpression(validateExpression(newExpression));
+  };
+
+  const handleFullExpressionBlur = () => {
+    setIsTypingFullExpression(false);
+    if (fullExpression.trim() && isValidExpression) {
+      parseFullExpression(fullExpression);
+    }
+  };
 
   const handleAddExpression = () => {
     setExpressions([
@@ -71,6 +137,9 @@ const BuildStrategy: React.FC<BuildStrategyProps> = ({
     setExpressions([{ id: "1", expression: "", weight: 1.0 }]);
     setName("");
     setDescription("");
+    setFullExpression("");
+    setIsValidExpression(true);
+    setIsTypingFullExpression(false);
   };
 
   const handleSave = () => {
@@ -133,15 +202,28 @@ const BuildStrategy: React.FC<BuildStrategyProps> = ({
             <label className="block text-sm font-medium mb-1">
               Full Strategy Expression
             </label>
-            <div
+            <input
+              type="text"
+              value={fullExpression}
+              onChange={handleFullExpressionChange}
+              onBlur={handleFullExpressionBlur}
+              placeholder="e.g., (Close[1m].Sma[7]) * 1 + (Close[1m].Sma[25]) * -1"
               className={`w-full px-3 py-2 rounded font-mono text-sm ${
                 colorMode === "dark"
                   ? "bg-gray-700 text-white"
                   : "bg-gray-100 text-gray-900"
+              } ${
+                !isValidExpression && fullExpression.trim()
+                  ? "border-2 border-red-500"
+                  : ""
               }`}
-            >
-              {fullExpression || "Strategy expression will appear here"}
-            </div>
+            />
+            {!isValidExpression && fullExpression.trim() && (
+              <p className="text-red-500 text-sm mt-1">
+                Invalid expression format. Expected format:
+                (Price[Granularity].Measure[Period]) * Weight
+              </p>
+            )}
           </div>
 
           {/* Expression Builder */}
@@ -160,7 +242,7 @@ const BuildStrategy: React.FC<BuildStrategyProps> = ({
               </button>
             </div>
 
-            {expressions.map((expr, index) => (
+            {expressions.map((expr) => (
               <div key={expr.id} className="flex items-start space-x-2">
                 <div className="flex-1">
                   <ExpressionBuilder
@@ -177,8 +259,6 @@ const BuildStrategy: React.FC<BuildStrategyProps> = ({
                       handleWeightChange(expr.id, parseFloat(e.target.value))
                     }
                     step="0.1"
-                    min="0"
-                    max="1"
                     className={`w-full px-2 py-1 rounded ${
                       colorMode === "dark"
                         ? "bg-gray-700 text-white"
@@ -226,10 +306,14 @@ const BuildStrategy: React.FC<BuildStrategyProps> = ({
             <button
               onClick={handleSave}
               disabled={
-                !name.trim() || expressions.some((e) => !e.expression.trim())
+                !name.trim() ||
+                expressions.some((e) => !e.expression.trim()) ||
+                !isValidExpression
               }
               className={`px-4 py-2 rounded flex items-center space-x-2 ${
-                !name.trim() || expressions.some((e) => !e.expression.trim())
+                !name.trim() ||
+                expressions.some((e) => !e.expression.trim()) ||
+                !isValidExpression
                   ? "bg-gray-400 cursor-not-allowed"
                   : colorMode === "dark"
                   ? "bg-blue-600 hover:bg-blue-700"
