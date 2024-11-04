@@ -1,52 +1,52 @@
-import React, { useState } from 'react';
-import { Parameter } from '../../types/backtest';
-import { RefreshCw, Play, AlertCircle } from 'lucide-react';
+import React from "react";
+import { Parameter } from "../../types/backtest";
+import { RefreshCw, Play, AlertCircle } from "lucide-react";
 
 interface BacktestParametersProps {
-  colorMode: 'light' | 'dark';
+  colorMode: "light" | "dark";
   onRunBacktest: (parameters: Parameter[]) => void;
   isBacktesting: boolean;
 }
 
 const defaultParameters: Parameter[] = [
   {
-    name: 'lookbackPeriod',
+    name: "lookbackPeriod",
     value: 20,
-    type: 'number',
+    type: "number",
     min: 1,
     max: 100,
     step: 1,
-    description: 'Number of periods to look back',
+    description: "Number of periods to look back",
   },
   {
-    name: 'profitTarget',
+    name: "profitTarget",
     value: 2.5,
-    type: 'number',
+    type: "number",
     min: 0.1,
     max: 10,
     step: 0.1,
-    description: 'Take profit target in %',
+    description: "Take profit target in %",
   },
   {
-    name: 'stopLoss',
+    name: "stopLoss",
     value: 1.5,
-    type: 'number',
+    type: "number",
     min: 0.1,
     max: 10,
     step: 0.1,
-    description: 'Stop loss in %',
+    description: "Stop loss in %",
   },
   {
-    name: 'trailingStop',
+    name: "trailingStop",
     value: true,
-    type: 'boolean',
-    description: 'Enable trailing stop loss',
+    type: "boolean",
+    description: "Enable trailing stop loss",
   },
   {
-    name: 'timeframe',
-    value: '1h',
-    type: 'string',
-    description: 'Trading timeframe',
+    name: "timeframe",
+    value: "1h",
+    type: "string",
+    description: "Trading timeframe",
   },
 ];
 
@@ -55,22 +55,29 @@ const BacktestParameters: React.FC<BacktestParametersProps> = ({
   onRunBacktest,
   isBacktesting,
 }) => {
-  const [parameters, setParameters] = useState<Parameter[]>(defaultParameters);
-  const [isValid, setIsValid] = useState(true);
+  const [parameters, setParameters] =
+    React.useState<Parameter[]>(defaultParameters);
+  const [isValid, setIsValid] = React.useState(true);
 
-  const handleParameterChange = (index: number, value: number | string | boolean) => {
+  const handleParameterChange = (
+    index: number,
+    value: number | string | boolean
+  ) => {
     const newParameters = [...parameters];
     newParameters[index] = { ...newParameters[index], value };
-    
+
     // Validate numeric parameters
-    const valid = newParameters.every(param => {
-      if (param.type === 'number') {
+    const valid = newParameters.every((param) => {
+      if (param.type === "number") {
         const numValue = param.value as number;
-        return numValue >= (param.min || -Infinity) && numValue <= (param.max || Infinity);
+        return (
+          numValue >= (param.min || -Infinity) &&
+          numValue <= (param.max || Infinity)
+        );
       }
       return true;
     });
-    
+
     setIsValid(valid);
     setParameters(newParameters);
   };
@@ -81,24 +88,30 @@ const BacktestParameters: React.FC<BacktestParametersProps> = ({
   };
 
   return (
-    <div className={`rounded-lg ${colorMode === 'dark' ? 'bg-gray-800' : 'bg-white'} p-6`}>
-      <h2 className="text-xl font-bold mb-4">Strategy Parameters</h2>
-      
+    <div
+      className={`rounded-lg ${
+        colorMode === "dark" ? "bg-gray-800" : "bg-white"
+      } p-6`}
+    >
+      <h2 className="text-xl font-bold mb-4">Backtest Parameters</h2>
+
       <div className="space-y-4">
         {parameters.map((param, index) => (
           <div key={param.name}>
             <label className="block text-sm font-medium mb-1">
               {param.name}
               {param.description && (
-                <span className={`ml-2 text-xs ${
-                  colorMode === 'dark' ? 'text-gray-400' : 'text-gray-500'
-                }`}>
+                <span
+                  className={`ml-2 text-xs ${
+                    colorMode === "dark" ? "text-gray-400" : "text-gray-500"
+                  }`}
+                >
                   ({param.description})
                 </span>
               )}
             </label>
-            
-            {param.type === 'number' && (
+
+            {param.type === "number" && (
               <div className="flex items-center space-x-2">
                 <input
                   type="range"
@@ -106,45 +119,51 @@ const BacktestParameters: React.FC<BacktestParametersProps> = ({
                   max={param.max}
                   step={param.step}
                   value={param.value as number}
-                  onChange={(e) => handleParameterChange(index, parseFloat(e.target.value))}
+                  onChange={(e) =>
+                    handleParameterChange(index, parseFloat(e.target.value))
+                  }
                   className="flex-1"
                 />
                 <input
                   type="number"
                   value={param.value as number}
-                  onChange={(e) => handleParameterChange(index, parseFloat(e.target.value))}
+                  onChange={(e) =>
+                    handleParameterChange(index, parseFloat(e.target.value))
+                  }
                   min={param.min}
                   max={param.max}
                   step={param.step}
                   className={`w-20 px-2 py-1 rounded ${
-                    colorMode === 'dark'
-                      ? 'bg-gray-700 text-white'
-                      : 'bg-gray-100 text-gray-900'
+                    colorMode === "dark"
+                      ? "bg-gray-700 text-white"
+                      : "bg-gray-100 text-gray-900"
                   }`}
                 />
               </div>
             )}
-            
-            {param.type === 'boolean' && (
+
+            {param.type === "boolean" && (
               <label className="flex items-center space-x-2">
                 <input
                   type="checkbox"
                   checked={param.value as boolean}
-                  onChange={(e) => handleParameterChange(index, e.target.checked)}
+                  onChange={(e) =>
+                    handleParameterChange(index, e.target.checked)
+                  }
                   className="rounded text-blue-500 focus:ring-blue-500"
                 />
                 <span>Enabled</span>
               </label>
             )}
-            
-            {param.type === 'string' && (
+
+            {param.type === "string" && (
               <select
                 value={param.value as string}
                 onChange={(e) => handleParameterChange(index, e.target.value)}
                 className={`w-full px-3 py-2 rounded ${
-                  colorMode === 'dark'
-                    ? 'bg-gray-700 text-white'
-                    : 'bg-gray-100 text-gray-900'
+                  colorMode === "dark"
+                    ? "bg-gray-700 text-white"
+                    : "bg-gray-100 text-gray-900"
                 }`}
               >
                 <option value="1m">1 minute</option>
@@ -162,20 +181,22 @@ const BacktestParameters: React.FC<BacktestParametersProps> = ({
       {!isValid && (
         <div className="mt-4 p-2 rounded bg-red-100 text-red-600 flex items-center space-x-2">
           <AlertCircle className="w-4 h-4" />
-          <span className="text-sm">Some parameters are outside valid ranges</span>
+          <span className="text-sm">
+            Some parameters are outside valid ranges
+          </span>
         </div>
       )}
-      
+
       <div className="mt-6 flex space-x-3">
         <button
           onClick={() => onRunBacktest(parameters)}
           disabled={!isValid || isBacktesting}
           className={`flex-1 py-2 px-4 rounded flex items-center justify-center space-x-2 ${
             !isValid || isBacktesting
-              ? 'bg-gray-400 cursor-not-allowed'
-              : colorMode === 'dark'
-              ? 'bg-blue-600 hover:bg-blue-700'
-              : 'bg-blue-500 hover:bg-blue-600'
+              ? "bg-gray-400 cursor-not-allowed"
+              : colorMode === "dark"
+              ? "bg-blue-600 hover:bg-blue-700"
+              : "bg-blue-500 hover:bg-blue-600"
           } text-white transition-colors duration-200`}
         >
           {isBacktesting ? (
@@ -190,14 +211,14 @@ const BacktestParameters: React.FC<BacktestParametersProps> = ({
             </>
           )}
         </button>
-        
+
         <button
           onClick={handleReset}
           disabled={isBacktesting}
           className={`px-4 py-2 rounded ${
-            colorMode === 'dark'
-              ? 'bg-gray-700 hover:bg-gray-600'
-              : 'bg-gray-200 hover:bg-gray-300'
+            colorMode === "dark"
+              ? "bg-gray-700 hover:bg-gray-600"
+              : "bg-gray-200 hover:bg-gray-300"
           } transition-colors duration-200`}
         >
           Reset
