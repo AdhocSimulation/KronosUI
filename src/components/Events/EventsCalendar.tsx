@@ -14,10 +14,16 @@ import {
   subMonths,
   subWeeks,
   subDays,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+  isSameMonth,
+  isSameDay,
+  format as formatDate,
 } from "date-fns";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "react-datepicker/dist/react-datepicker.css";
-import { Plus } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { useEvents } from "../../contexts/EventsContext";
 import { Event } from "../../types/events";
 import DayView from "./DayView";
@@ -50,6 +56,94 @@ const eventTypes = [
   "Airdrop",
 ] as const;
 
+const MiniCalendar = ({
+  colorMode,
+  currentDate,
+  onDateChange,
+}: {
+  colorMode: "light" | "dark";
+  currentDate: Date;
+  onDateChange: (date: Date) => void;
+}) => {
+  const start = startOfMonth(currentDate);
+  const end = endOfMonth(currentDate);
+  const days = eachDayOfInterval({ start, end });
+
+  const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+  const handlePrevMonth = () => {
+    onDateChange(subMonths(currentDate, 1));
+  };
+
+  const handleNextMonth = () => {
+    onDateChange(addMonths(currentDate, 1));
+  };
+
+  return (
+    <div
+      className={`w-full rounded-lg overflow-hidden ${
+        colorMode === "dark" ? "bg-gray-800" : "bg-white"
+      }`}
+    >
+      <div className="p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-medium">
+            {formatDate(currentDate, "MMMM yyyy")}
+          </h2>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={handlePrevMonth}
+              className={`p-1 rounded hover:${
+                colorMode === "dark" ? "bg-gray-700" : "bg-gray-100"
+              }`}
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button
+              onClick={handleNextMonth}
+              className={`p-1 rounded hover:${
+                colorMode === "dark" ? "bg-gray-700" : "bg-gray-100"
+              }`}
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-7 gap-1">
+          {weekDays.map((day) => (
+            <div
+              key={day}
+              className="text-center text-sm font-medium p-2 text-gray-500"
+            >
+              {day}
+            </div>
+          ))}
+          {days.map((day) => (
+            <button
+              key={day.toISOString()}
+              onClick={() => onDateChange(day)}
+              className={`aspect-square flex items-center justify-center text-sm rounded-full ${
+                isSameDay(day, currentDate)
+                  ? "bg-blue-500 text-white"
+                  : isSameMonth(day, currentDate)
+                  ? colorMode === "dark"
+                    ? "text-gray-200 hover:bg-gray-700"
+                    : "text-gray-700 hover:bg-gray-100"
+                  : colorMode === "dark"
+                  ? "text-gray-600"
+                  : "text-gray-400"
+              }`}
+            >
+              {formatDate(day, "d")}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const EventsCalendar: React.FC<EventsCalendarProps> = ({ colorMode }) => {
   const { events, loading, error, fetchEvents, addEvent, deleteEvent } =
     useEvents();
@@ -58,7 +152,7 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({ colorMode }) => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [view, setView] = useState(Views.MONTH);
-  const [date, setDate] = useState(new Date());
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [timezone, setTimezone] = useState("America/New_York");
   const [newEvent, setNewEvent] = useState<Partial<Event>>({
     type: "ICO",
@@ -70,47 +164,7 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({ colorMode }) => {
 
   useEffect(() => {
     fetchEvents();
-  }, []);
-
-  const getNextDate = (currentDate: Date, currentView: string): Date => {
-    switch (currentView) {
-      case Views.MONTH:
-        return addMonths(currentDate, 1);
-      case Views.WEEK:
-        return addWeeks(currentDate, 1);
-      case Views.DAY:
-        return addDays(currentDate, 1);
-      default:
-        return addDays(currentDate, 1);
-    }
-  };
-
-  const getPreviousDate = (currentDate: Date, currentView: string): Date => {
-    switch (currentView) {
-      case Views.MONTH:
-        return subMonths(currentDate, 1);
-      case Views.WEEK:
-        return subWeeks(currentDate, 1);
-      case Views.DAY:
-        return subDays(currentDate, 1);
-      default:
-        return subDays(currentDate, 1);
-    }
-  };
-
-  const handleNavigate = (action: "PREV" | "NEXT" | "TODAY") => {
-    switch (action) {
-      case "PREV":
-        setDate(getPreviousDate(date, view));
-        break;
-      case "NEXT":
-        setDate(getNextDate(date, view));
-        break;
-      case "TODAY":
-        setDate(new Date());
-        break;
-    }
-  };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleAddEvent = async () => {
     if (newEvent.title && newEvent.start && newEvent.end && newEvent.type) {
@@ -190,63 +244,92 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({ colorMode }) => {
         colorMode === "dark" ? "bg-gray-900" : "bg-gray-50"
       } min-h-screen`}
     >
-      <div className="mb-6 flex justify-between items-center">
-        <h1
-          className={`text-2xl font-bold ${
-            colorMode === "dark" ? "text-white" : "text-gray-900"
-          }`}
-        >
-          Events Calendar
-        </h1>
-        <button
-          onClick={() => handleOpenAddEvent(selectedDate || new Date())}
-          className={`flex items-center px-4 py-2 rounded-lg ${
-            colorMode === "dark"
-              ? "bg-blue-600 hover:bg-blue-700"
-              : "bg-blue-500 hover:bg-blue-600"
-          } text-white transition-colors duration-200`}
-        >
-          <Plus className="w-5 h-5 mr-2" />
-          Add Event
-        </button>
-      </div>
+      <div className="flex space-x-6">
+        {/* Left Sidebar */}
+        <div className="w-64 space-y-6">
+          <button
+            onClick={() => handleOpenAddEvent(currentDate)}
+            className={`w-full px-4 py-3 rounded-lg ${
+              colorMode === "dark"
+                ? "bg-blue-600 hover:bg-blue-700"
+                : "bg-blue-500 hover:bg-blue-600"
+            } text-white transition-colors duration-200 flex items-center justify-center space-x-2`}
+          >
+            <Plus className="w-5 h-5" />
+            <span>Create Event</span>
+          </button>
 
-      <div
-        className={`${
-          colorMode === "dark" ? "bg-gray-800" : "bg-white"
-        } rounded-lg shadow-lg`}
-      >
-        <Calendar
-          localizer={localizer}
-          events={convertedEvents}
-          startAccessor="start"
-          endAccessor="end"
-          style={{ height: "calc(100vh - 250px)" }}
-          onSelectEvent={(event) => handleEventClick(event as Event)}
-          onSelectSlot={({ start }) => handleDayClick(start)}
-          selectable
-          className={colorMode === "dark" ? "dark-calendar" : ""}
-          view={view}
-          onView={setView as any}
-          date={date}
-          onNavigate={setDate}
-          eventPropGetter={eventPropGetter}
-          components={{
-            toolbar: () => (
-              <CalendarToolbar
-                colorMode={colorMode}
-                timezone={timezone}
-                setTimezone={setTimezone}
-                view={view}
-                setView={setView}
-                date={date}
-                handleNavigate={handleNavigate}
-                onNavigate={setDate}
-              />
-            ),
-          }}
-          views={[Views.MONTH, Views.WEEK, Views.DAY]}
-        />
+          <MiniCalendar
+            colorMode={colorMode}
+            currentDate={currentDate}
+            onDateChange={setCurrentDate}
+          />
+        </div>
+
+        {/* Main Calendar */}
+        <div className="flex-1">
+          <div
+            className={`rounded-lg ${
+              colorMode === "dark" ? "bg-gray-800" : "bg-white"
+            } shadow-lg overflow-hidden`}
+          >
+            <Calendar
+              localizer={localizer}
+              events={convertedEvents}
+              startAccessor="start"
+              endAccessor="end"
+              style={{ height: "calc(100vh - 2rem)" }}
+              onSelectEvent={(event) => handleEventClick(event as Event)}
+              onSelectSlot={({ start }) => handleDayClick(start)}
+              selectable
+              className={colorMode === "dark" ? "dark-calendar" : ""}
+              view={view}
+              onView={setView as any}
+              date={currentDate}
+              onNavigate={setCurrentDate}
+              eventPropGetter={eventPropGetter}
+              components={{
+                toolbar: () => (
+                  <CalendarToolbar
+                    colorMode={colorMode}
+                    timezone={timezone}
+                    setTimezone={setTimezone}
+                    view={view}
+                    setView={setView}
+                    date={currentDate}
+                    handleNavigate={(action) => {
+                      switch (action) {
+                        case "PREV":
+                          setCurrentDate(
+                            view === Views.MONTH
+                              ? subMonths(currentDate, 1)
+                              : view === Views.WEEK
+                              ? subWeeks(currentDate, 1)
+                              : subDays(currentDate, 1)
+                          );
+                          break;
+                        case "NEXT":
+                          setCurrentDate(
+                            view === Views.MONTH
+                              ? addMonths(currentDate, 1)
+                              : view === Views.WEEK
+                              ? addWeeks(currentDate, 1)
+                              : addDays(currentDate, 1)
+                          );
+                          break;
+                        case "TODAY":
+                          setCurrentDate(new Date());
+                          break;
+                      }
+                    }}
+                    onNavigate={setCurrentDate}
+                  />
+                ),
+              }}
+              views={[Views.MONTH, Views.WEEK, Views.DAY]}
+            />
+          </div>
+        </div>
       </div>
 
       {showAddModal && (
