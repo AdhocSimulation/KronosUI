@@ -1,8 +1,7 @@
-import { BacktestRequest, BacktestResponse, BacktestResult, Trade, EquityPoint } from "../types/backtest";
+import { apiService } from './apiService';
+import { BacktestRequest, BacktestResponse } from "../types/backtest";
 
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-// Realistic base metrics for different strategies
+// Base metrics for different strategies
 const STRATEGY_BASE_METRICS = {
   "Moving Average Crossover": {
     baseReturn: 32.5,
@@ -37,9 +36,11 @@ const STRATEGY_BASE_METRICS = {
 export const backtestService = {
   async runBacktest(request: BacktestRequest): Promise<BacktestResponse> {
     try {
-      await delay(2000);
+      // In production, use this:
+      // return await apiService.post<BacktestResponse>('/backtest', request);
 
-      const results: BacktestResult[] = request.input.assets.flatMap((asset) =>
+      // For development, simulate backtest with mock data
+      const results = request.input.assets.flatMap((asset) =>
         request.parameters.map((params, paramSetIndex) => {
           const strategyName = request.input.strategy?.name || "Custom Strategy";
           const baseMetrics = STRATEGY_BASE_METRICS[strategyName as keyof typeof STRATEGY_BASE_METRICS] 
@@ -64,26 +65,7 @@ export const backtestService = {
           const winningTrades = Math.floor(numTrades * (winRate / 100));
           const losingTrades = numTrades - winningTrades;
 
-          // Store parameter set index for color synchronization
-          const parameters = [
-            {
-              name: "parameterSetIndex",
-              value: paramSetIndex,
-              type: "number" as const,
-            },
-            {
-              name: "strategy",
-              value: strategyName,
-              type: "string" as const,
-            },
-            ...(request.input.strategy?.expressions.map((expr, index) => ({
-              name: `expression_${index + 1}`,
-              value: expr.expression,
-              type: "string" as const,
-            })) || []),
-          ];
-
-          return {
+          const result = {
             trades: generateMockTrades(asset, params, winRate),
             metrics: {
               totalReturn,
@@ -100,17 +82,36 @@ export const backtestService = {
               largestWin: avgWin * 2.5,
               largestLoss: avgLoss * 1.8,
               averageHoldingPeriod: `${(params.lookbackPeriod / 8).toFixed(1)} days`,
-              commissions: numTrades * 2.5, // Assuming $2.50 commission per trade
+              commissions: numTrades * 2.5,
             },
             equity: generateEquityCurve(totalReturn, params.lookbackPeriod),
-            parameters,
+            parameters: [
+              {
+                name: "parameterSetIndex",
+                value: paramSetIndex,
+                type: "number" as const,
+              },
+              {
+                name: "strategy",
+                value: strategyName,
+                type: "string" as const,
+              },
+              ...(request.input.strategy?.expressions.map((expr, index) => ({
+                name: `expression_${index + 1}`,
+                value: expr.expression,
+                type: "string" as const,
+              })) || []),
+            ],
             asset,
           };
+
+          return result;
         })
       );
 
-      return { results };
+      return apiService.mockApiCall({ results }, 2000); // Longer delay for backtest
     } catch (error) {
+      console.error('Error running backtest:', error);
       return {
         results: [],
         error: error instanceof Error ? error.message : "Unknown error occurred",
@@ -128,8 +129,8 @@ function generateMockTrades(
     trailingStop: boolean;
   },
   winRate: number
-): Trade[] {
-  const trades: Trade[] = [];
+) {
+  const trades = [];
   const startDate = new Date(2023, 0, 1);
   const numTrades = Math.floor(250 * (20 / params.lookbackPeriod));
   const winRateDecimal = winRate / 100;
@@ -151,7 +152,7 @@ function generateMockTrades(
       : entryPrice * (1 + params.stopLoss / 100);
 
     const quantity = Math.round(Math.random() * 100);
-    const commission = 2.5; // Fixed commission per trade
+    const commission = 2.5;
 
     trades.push({
       id: `trade-${i}`,
@@ -170,8 +171,8 @@ function generateMockTrades(
   return trades;
 }
 
-function generateEquityCurve(totalReturn: number, lookbackPeriod: number): EquityPoint[] {
-  const data: EquityPoint[] = [];
+function generateEquityCurve(totalReturn: number, lookbackPeriod: number) {
+  const data = [];
   let equity = 10000;
   const startDate = new Date(2023, 0, 1);
   const volatility = 0.02 * (20 / lookbackPeriod);

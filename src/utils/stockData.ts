@@ -1,6 +1,7 @@
 import axios from "axios";
 import { StockData } from "../types/chart";
 import { utcToZonedTime, zonedTimeToUtc } from 'date-fns-tz';
+import { assetService } from "../services/assetService";
 
 export const fetchStockData = async (
   stock: string,
@@ -8,7 +9,7 @@ export const fetchStockData = async (
 ): Promise<StockData[]> => {
   try {
     // For now, return placeholder data instead of making API calls
-    return generatePlaceholderData();
+    return generatePlaceholderData(stock);
 
     // In production, uncomment and use real API:
     /*
@@ -38,20 +39,23 @@ export const fetchStockData = async (
   }
 };
 
-export const generatePlaceholderData = (): StockData[] => {
+export const generatePlaceholderData = (symbol: string): StockData[] => {
   const data: StockData[] = [];
   const startDate = new Date();
   startDate.setFullYear(startDate.getFullYear() - 1);
   startDate.setHours(2, 0, 0);
+
+  const basePrice = assetService.getBasePrice(symbol);
+
   for (let i = 0; i < 365; i++) {
     const date = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000);
-    const basePrice = 100 + Math.sin(i / 10) * 20 + Math.random() * 10;
+    const price = basePrice + Math.sin(i / 10) * (basePrice * 0.2) + Math.random() * (basePrice * 0.1);
     data.push({
       date: date.getTime(),
-      open: basePrice,
-      high: basePrice + Math.random() * 5,
-      low: basePrice - Math.random() * 5,
-      close: basePrice + Math.random() * 2 - 1,
+      open: price,
+      high: price + Math.random() * (basePrice * 0.05),
+      low: price - Math.random() * (basePrice * 0.05),
+      close: price + Math.random() * (basePrice * 0.02) - (basePrice * 0.01),
       volume: Math.floor(Math.random() * 1000000) + 500000,
     });
   }

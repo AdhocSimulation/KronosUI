@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Strategy } from "../../types/strategy";
 import { strategyService } from "../../services/strategyService";
 import BuildStrategy from "./BuildStrategy";
@@ -31,13 +31,41 @@ const InputParameters: React.FC<InputParametersProps> = ({
   selectedStrategy,
   onStrategyChange,
 }) => {
-  const [showBuildStrategy, setShowBuildStrategy] = React.useState(false);
-  const [isEditing, setIsEditing] = React.useState(false);
-  const strategies = strategyService.getStrategies();
+  const [showBuildStrategy, setShowBuildStrategy] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [strategies, setStrategies] = useState<Strategy[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleStrategySelect = (strategyId: string) => {
-    const strategy = strategyService.getStrategy(strategyId);
-    onStrategyChange(strategy || null);
+  useEffect(() => {
+    const fetchStrategies = async () => {
+      try {
+        setIsLoading(true);
+        const fetchedStrategies = await strategyService.getStrategies();
+        setStrategies(fetchedStrategies);
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch strategies');
+        setStrategies([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchStrategies();
+  }, []);
+
+  const handleStrategySelect = async (strategyId: string) => {
+    try {
+      if (!strategyId) {
+        onStrategyChange(null);
+        return;
+      }
+      const strategy = await strategyService.getStrategy(strategyId);
+      onStrategyChange(strategy || null);
+    } catch (err) {
+      console.error('Error fetching strategy:', err);
+    }
   };
 
   const handleNewStrategy = () => {
@@ -58,12 +86,43 @@ const InputParameters: React.FC<InputParametersProps> = ({
       const savedStrategy = isEditing && selectedStrategy
         ? await strategyService.updateStrategy(selectedStrategy.id, strategy)
         : await strategyService.saveStrategy(strategy);
+      
+      // Refresh strategies list
+      const updatedStrategies = await strategyService.getStrategies();
+      setStrategies(updatedStrategies);
+      
       onStrategyChange(savedStrategy);
       setShowBuildStrategy(false);
     } catch (error) {
       console.error("Error saving strategy:", error);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className={`rounded-lg ${
+        colorMode === "dark" ? "bg-gray-800" : "bg-white"
+      } p-6 mb-6`}>
+        <div className="animate-pulse">
+          <div className="h-4 bg-gray-300 rounded w-1/4 mb-4"></div>
+          <div className="space-y-3">
+            <div className="h-8 bg-gray-300 rounded"></div>
+            <div className="h-8 bg-gray-300 rounded"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={`rounded-lg ${
+        colorMode === "dark" ? "bg-gray-800" : "bg-white"
+      } p-6 mb-6`}>
+        <div className="text-red-500">Error: {error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className={`rounded-lg ${

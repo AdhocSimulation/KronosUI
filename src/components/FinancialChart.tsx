@@ -17,65 +17,7 @@ import { fetchStockData } from "../utils/stockData";
 import { drawStrategyEvents } from "../utils/eventHelper";
 import { getChartConfiguration } from "../utils/chartConfig";
 import { useChart } from "../contexts/ChartContext";
-
-const stocks = [
-  "AAPL",
-  "GOOGL",
-  "MSFT",
-  "AMZN",
-  "META",
-  "NVDA",
-  "TSLA",
-  "JPM",
-  "V",
-  "WMT",
-  "PG",
-  "JNJ",
-  "UNH",
-  "HD",
-  "BAC",
-];
-
-const dummyEvents: StrategyEvent[] = [
-  {
-    date: new Date("2024-01-15").getTime(),
-    title: "Market Holiday",
-    description: "Martin Luther King Jr. Day - Markets Closed",
-    type: "global",
-    category: "Market Event",
-  },
-  {
-    date: new Date("2024-02-15").getTime(),
-    title: "Earnings Report",
-    description: "Q4 2023 Financial Results",
-    type: "stock-specific",
-    stock: "AAPL",
-    category: "Company Event",
-  },
-  {
-    date: new Date("2024-03-01").getTime(),
-    title: "Fed Rate Decision",
-    description: "Federal Reserve announces interest rate decision",
-    type: "global",
-    category: "Economic Event",
-  },
-  {
-    date: new Date("2024-03-15").getTime(),
-    title: "Product Launch",
-    description: "New iPhone model announcement",
-    type: "stock-specific",
-    stock: "AAPL",
-    category: "Company Event",
-  },
-  {
-    date: new Date("2024-03-20").getTime(),
-    title: "Windows Update",
-    description: "Major Windows platform update release",
-    type: "stock-specific",
-    stock: "MSFT",
-    category: "Company Event",
-  },
-];
+import { assetService } from "../services/assetService";
 
 const timeGranularities = [
   { value: "1min", label: "1m" },
@@ -118,8 +60,17 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
     {}
   );
   const [isLoading, setIsLoading] = useState(false);
+  const [availableStocks, setAvailableStocks] = useState<string[]>([]);
   const chartRef = useRef<HighchartsReact.RefObject>(null);
   const extremesTimeout = useRef<NodeJS.Timeout>();
+
+  useEffect(() => {
+    const loadAssets = async () => {
+      const assets = await assetService.getAssets();
+      setAvailableStocks(assets.map(asset => asset.symbol));
+    };
+    loadAssets();
+  }, []);
 
   const handleStockChange = (stock: string) => {
     updateChartState({ selectedStock: stock });
@@ -313,7 +264,7 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
         <div className="w-3/4 p-4">
           <ChartWithControls
             colorMode={colorMode}
-            stocks={stocks}
+            stocks={availableStocks}
             selectedStock={selectedStock}
             timeGranularities={timeGranularities}
             selectedTimeGranularity={selectedGranularity}
@@ -334,5 +285,46 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
     </div>
   );
 }
+
+const dummyEvents: StrategyEvent[] = [
+  {
+    date: new Date("2024-01-15").getTime(),
+    title: "Market Holiday",
+    description: "Martin Luther King Jr. Day - Markets Closed",
+    type: "global",
+    category: "Market Event",
+  },
+  {
+    date: new Date("2024-02-15").getTime(),
+    title: "Earnings Report",
+    description: "Q4 2023 Financial Results",
+    type: "stock-specific",
+    stock: "AAPL",
+    category: "Company Event",
+  },
+  {
+    date: new Date("2024-03-01").getTime(),
+    title: "Fed Rate Decision",
+    description: "Federal Reserve announces interest rate decision",
+    type: "global",
+    category: "Economic Event",
+  },
+  {
+    date: new Date("2024-03-15").getTime(),
+    title: "Product Launch",
+    description: "New iPhone model announcement",
+    type: "stock-specific",
+    stock: "AAPL",
+    category: "Company Event",
+  },
+  {
+    date: new Date("2024-03-20").getTime(),
+    title: "Windows Update",
+    description: "Major Windows platform update release",
+    type: "stock-specific",
+    stock: "MSFT",
+    category: "Company Event",
+  },
+];
 
 export default FinancialChart;

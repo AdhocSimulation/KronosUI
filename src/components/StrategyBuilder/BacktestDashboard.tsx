@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import BacktestParameters from "./BacktestParameters";
 import BacktestResults from "./BacktestResults";
 import TradeHistory from "./TradeHistory";
@@ -9,6 +9,7 @@ import BacktestTabs from "./BacktestTabs";
 import { BacktestParameters as BacktestParams, BacktestResult, Trade } from "../../types/backtest";
 import { Strategy } from "../../types/strategy";
 import { backtestService } from "../../services/backtestService";
+import { assetService } from "../../services/assetService";
 
 interface BacktestDashboardProps {
   colorMode: "light" | "dark";
