@@ -1,3 +1,5 @@
+import { Strategy } from "./strategy";
+
 export interface Trade {
   id: string;
   symbol: string;
@@ -26,6 +28,14 @@ export interface Parameter {
   description?: string;
 }
 
+export interface BacktestParameters {
+  lookbackPeriod: number;
+  profitTarget: number;
+  stopLoss: number;
+  trailingStop: boolean;
+  timeframe: string;
+}
+
 export interface PerformanceMetrics {
   totalReturn: number;
   sharpeRatio: number;
@@ -50,4 +60,20 @@ export interface BacktestResult {
   equity: EquityPoint[];
   parameters: Parameter[];
   asset: string;
+}
+
+export interface BacktestInput {
+  assets: string[];
+  strategy: Strategy | null;
+  timeframe: string;
+}
+
+export interface BacktestRequest {
+  input: BacktestInput;
+  parameters: BacktestParameters[];
+}
+
+export interface BacktestResponse {
+  results: BacktestResult[];
+  error?: string;
 }

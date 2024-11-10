@@ -11,21 +11,30 @@ const BacktestResults: React.FC<BacktestResultsProps> = ({
   colorMode,
   result,
 }) => {
-  const formatNumber = (num: number, decimals: number = 2) => {
+  const formatNumber = (num: number | undefined, decimals: number = 2): string => {
+    if (typeof num !== 'number' || isNaN(num)) {
+      return '0';
+    }
     return new Intl.NumberFormat("en-US", {
       minimumFractionDigits: decimals,
       maximumFractionDigits: decimals,
     }).format(num);
   };
 
-  const formatCurrency = (num: number) => {
+  const formatCurrency = (num: number | undefined): string => {
+    if (typeof num !== 'number' || isNaN(num)) {
+      return '$0.00';
+    }
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
     }).format(num);
   };
 
-  const formatPercent = (num: number) => {
+  const formatPercent = (num: number | undefined): string => {
+    if (typeof num !== 'number' || isNaN(num)) {
+      return '0%';
+    }
     return `${formatNumber(num)}%`;
   };
 
@@ -38,14 +47,14 @@ const BacktestResults: React.FC<BacktestResultsProps> = ({
           <div className="text-xl font-bold flex items-center space-x-1">
             <span
               className={
-                result.metrics.totalReturn >= 0
+                (result.metrics.totalReturn || 0) >= 0
                   ? "text-green-500"
                   : "text-red-500"
               }
             >
               {formatPercent(result.metrics.totalReturn)}
             </span>
-            {result.metrics.totalReturn >= 0 ? (
+            {(result.metrics.totalReturn || 0) >= 0 ? (
               <ArrowUpRight className="w-4 h-4 text-green-500" />
             ) : (
               <ArrowDownRight className="w-4 h-4 text-red-500" />
@@ -83,7 +92,7 @@ const BacktestResults: React.FC<BacktestResultsProps> = ({
         </div>
         <div>
           <div className="opacity-75">Total Trades</div>
-          <div className="font-medium">{result.metrics.totalTrades}</div>
+          <div className="font-medium">{result.metrics.totalTrades || 0}</div>
         </div>
         <div>
           <div className="opacity-75">Avg Win</div>
@@ -115,10 +124,14 @@ const BacktestResults: React.FC<BacktestResultsProps> = ({
       <div className="text-sm">
         <div className="opacity-75 mb-1">Strategy Parameters</div>
         <div className="grid grid-cols-2 gap-2">
-          {result.parameters.map((param) => (
-            <div key={param.name}>
+          {result.parameters.map((param, index) => (
+            <div key={index}>
               <span className="opacity-75">{param.name}:</span>{" "}
-              <span className="font-medium">{param.value}</span>
+              <span className="font-medium">
+                {typeof param.value === 'number' 
+                  ? formatNumber(param.value) 
+                  : String(param.value)}
+              </span>
             </div>
           ))}
         </div>

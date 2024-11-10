@@ -1,84 +1,45 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Plus, Trash2, Play, RefreshCw } from "lucide-react";
-import { Parameter } from "../../types/backtest";
+import { BacktestParameters as BacktestParams } from "../../types/backtest";
+import { getParameterSetColor } from "../../utils/colors";
 
 interface BacktestParametersProps {
   colorMode: "light" | "dark";
-  onRunBacktest: (parameterSets: Parameter[][]) => void;
+  onRunBacktest: (parameterSets: BacktestParams[]) => void;
   isBacktesting: boolean;
 }
 
-const defaultParameterSet: Parameter[] = [
-  {
-    name: "lookbackPeriod",
-    value: 20,
-    type: "number",
-    min: 1,
-    max: 100,
-    step: 1,
-    description: "Number of periods to look back",
-  },
-  {
-    name: "profitTarget",
-    value: 2.5,
-    type: "number",
-    min: 0.1,
-    max: 10,
-    step: 0.1,
-    description: "Take profit target in %",
-  },
-  {
-    name: "stopLoss",
-    value: 1.5,
-    type: "number",
-    min: 0.1,
-    max: 10,
-    step: 0.1,
-    description: "Stop loss in %",
-  },
-  {
-    name: "trailingStop",
-    value: true,
-    type: "boolean",
-    description: "Enable trailing stop loss",
-  },
-  {
-    name: "timeframe",
-    value: "1h",
-    type: "string",
-    description: "Trading timeframe",
-  },
-];
+const defaultParameterSet: BacktestParams = {
+  lookbackPeriod: 20,
+  profitTarget: 2.5,
+  stopLoss: 1.5,
+  trailingStop: true,
+  timeframe: "1h",
+};
 
 const BacktestParameters: React.FC<BacktestParametersProps> = ({
   colorMode,
   onRunBacktest,
   isBacktesting,
 }) => {
-  const [parameterSets, setParameterSets] = useState<Parameter[][]>([
-    defaultParameterSet,
-  ]);
+  const [parameterSets, setParameterSets] = useState<BacktestParams[]>([defaultParameterSet]);
   const [expandedSet, setExpandedSet] = useState<number | null>(0);
 
   const handleParameterChange = (
     setIndex: number,
-    paramIndex: number,
+    field: keyof BacktestParams,
     value: number | string | boolean
   ) => {
     const newParameterSets = [...parameterSets];
-    newParameterSets[setIndex] = [...newParameterSets[setIndex]];
-    newParameterSets[setIndex][paramIndex] = {
-      ...newParameterSets[setIndex][paramIndex],
-      value,
+    newParameterSets[setIndex] = {
+      ...newParameterSets[setIndex],
+      [field]: value,
     };
     setParameterSets(newParameterSets);
   };
 
   const handleAddParameterSet = () => {
-    setParameterSets([
-      ...parameterSets,
-      JSON.parse(JSON.stringify(defaultParameterSet)),
-    ]);
+    setParameterSets([...parameterSets, { ...defaultParameterSet }]);
     setExpandedSet(parameterSets.length);
   };
 
@@ -93,29 +54,14 @@ const BacktestParameters: React.FC<BacktestParametersProps> = ({
   };
 
   const handleReset = () => {
-    setParameterSets([JSON.parse(JSON.stringify(defaultParameterSet))]);
+    setParameterSets([{ ...defaultParameterSet }]);
     setExpandedSet(0);
   };
 
-  const getParameterSetColor = (
-    index: number
-  ): { border: string; bg: string } => {
-    const colors = [
-      { border: "border-blue-500", bg: "bg-blue-500/10" },
-      { border: "border-green-500", bg: "bg-green-500/10" },
-      { border: "border-yellow-500", bg: "bg-yellow-500/10" },
-      { border: "border-purple-500", bg: "bg-purple-500/10" },
-      { border: "border-pink-500", bg: "bg-pink-500/10" },
-    ];
-    return colors[index % colors.length];
-  };
-
   return (
-    <div
-      className={`rounded-lg ${
-        colorMode === "dark" ? "bg-gray-800" : "bg-white"
-      } p-6`}
-    >
+    <div className={`rounded-lg ${
+      colorMode === "dark" ? "bg-gray-800" : "bg-white"
+    } p-6`}>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold">Backtest Parameters</h2>
         <button
@@ -152,8 +98,8 @@ const BacktestParameters: React.FC<BacktestParametersProps> = ({
                   </span>
                   {expandedSet !== setIndex && (
                     <span className="text-xs opacity-60">
-                      (LP: {paramSet[0].value}, PT: {paramSet[1].value}%, SL:{" "}
-                      {paramSet[2].value}%)
+                      (LP: {paramSet.lookbackPeriod}, PT: {paramSet.profitTarget}%, SL:{" "}
+                      {paramSet.stopLoss}%)
                     </span>
                   )}
                 </div>
@@ -172,106 +118,198 @@ const BacktestParameters: React.FC<BacktestParametersProps> = ({
 
               {expandedSet === setIndex && (
                 <div className="p-4 space-y-4">
-                  {paramSet.map((param, paramIndex) => (
-                    <div key={param.name}>
-                      <label className="block text-sm font-medium mb-1">
-                        {param.name}
-                        {param.description && (
-                          <span
-                            className={`ml-2 text-xs ${
-                              colorMode === "dark"
-                                ? "text-gray-400"
-                                : "text-gray-500"
-                            }`}
-                          >
-                            ({param.description})
-                          </span>
-                        )}
-                      </label>
-
-                      {param.type === "number" && (
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="range"
-                            min={param.min}
-                            max={param.max}
-                            step={param.step}
-                            value={param.value as number}
-                            onChange={(e) =>
-                              handleParameterChange(
-                                setIndex,
-                                paramIndex,
-                                parseFloat(e.target.value)
-                              )
-                            }
-                            className="flex-1"
-                          />
-                          <input
-                            type="number"
-                            value={param.value as number}
-                            onChange={(e) =>
-                              handleParameterChange(
-                                setIndex,
-                                paramIndex,
-                                parseFloat(e.target.value)
-                              )
-                            }
-                            min={param.min}
-                            max={param.max}
-                            step={param.step}
-                            className={`w-20 px-2 py-1 rounded ${
-                              colorMode === "dark"
-                                ? "bg-gray-700 text-white"
-                                : "bg-gray-100 text-gray-900"
-                            }`}
-                          />
-                        </div>
-                      )}
-
-                      {param.type === "boolean" && (
-                        <label className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            checked={param.value as boolean}
-                            onChange={(e) =>
-                              handleParameterChange(
-                                setIndex,
-                                paramIndex,
-                                e.target.checked
-                              )
-                            }
-                            className="rounded text-blue-500 focus:ring-blue-500"
-                          />
-                          <span>Enabled</span>
-                        </label>
-                      )}
-
-                      {param.type === "string" && (
-                        <select
-                          value={param.value as string}
-                          onChange={(e) =>
-                            handleParameterChange(
-                              setIndex,
-                              paramIndex,
-                              e.target.value
-                            )
-                          }
-                          className={`w-full px-3 py-2 rounded ${
-                            colorMode === "dark"
-                              ? "bg-gray-700 text-white"
-                              : "bg-gray-100 text-gray-900"
-                          }`}
-                        >
-                          <option value="1m">1 minute</option>
-                          <option value="5m">5 minutes</option>
-                          <option value="15m">15 minutes</option>
-                          <option value="1h">1 hour</option>
-                          <option value="4h">4 hours</option>
-                          <option value="1d">1 day</option>
-                        </select>
-                      )}
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      Lookback Period
+                      <span className={`ml-2 text-xs ${
+                        colorMode === "dark"
+                          ? "text-gray-400"
+                          : "text-gray-500"
+                      }`}>
+                        (Number of periods to look back)
+                      </span>
+                    </label>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="range"
+                        min={1}
+                        max={100}
+                        step={1}
+                        value={paramSet.lookbackPeriod}
+                        onChange={(e) =>
+                          handleParameterChange(
+                            setIndex,
+                            "lookbackPeriod",
+                            parseInt(e.target.value)
+                          )
+                        }
+                        className="flex-1"
+                      />
+                      <input
+                        type="number"
+                        value={paramSet.lookbackPeriod}
+                        onChange={(e) =>
+                          handleParameterChange(
+                            setIndex,
+                            "lookbackPeriod",
+                            parseInt(e.target.value)
+                          )
+                        }
+                        min={1}
+                        max={100}
+                        step={1}
+                        className={`w-20 px-2 py-1 rounded ${
+                          colorMode === "dark"
+                            ? "bg-gray-700 text-white"
+                            : "bg-gray-100 text-gray-900"
+                        }`}
+                      />
                     </div>
-                  ))}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      Profit Target
+                      <span className={`ml-2 text-xs ${
+                        colorMode === "dark"
+                          ? "text-gray-400"
+                          : "text-gray-500"
+                      }`}>
+                        (Take profit target in %)
+                      </span>
+                    </label>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="range"
+                        min={0.1}
+                        max={10}
+                        step={0.1}
+                        value={paramSet.profitTarget}
+                        onChange={(e) =>
+                          handleParameterChange(
+                            setIndex,
+                            "profitTarget",
+                            parseFloat(e.target.value)
+                          )
+                        }
+                        className="flex-1"
+                      />
+                      <input
+                        type="number"
+                        value={paramSet.profitTarget}
+                        onChange={(e) =>
+                          handleParameterChange(
+                            setIndex,
+                            "profitTarget",
+                            parseFloat(e.target.value)
+                          )
+                        }
+                        min={0.1}
+                        max={10}
+                        step={0.1}
+                        className={`w-20 px-2 py-1 rounded ${
+                          colorMode === "dark"
+                            ? "bg-gray-700 text-white"
+                            : "bg-gray-100 text-gray-900"
+                        }`}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      Stop Loss
+                      <span className={`ml-2 text-xs ${
+                        colorMode === "dark"
+                          ? "text-gray-400"
+                          : "text-gray-500"
+                      }`}>
+                        (Stop loss in %)
+                      </span>
+                    </label>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="range"
+                        min={0.1}
+                        max={10}
+                        step={0.1}
+                        value={paramSet.stopLoss}
+                        onChange={(e) =>
+                          handleParameterChange(
+                            setIndex,
+                            "stopLoss",
+                            parseFloat(e.target.value)
+                          )
+                        }
+                        className="flex-1"
+                      />
+                      <input
+                        type="number"
+                        value={paramSet.stopLoss}
+                        onChange={(e) =>
+                          handleParameterChange(
+                            setIndex,
+                            "stopLoss",
+                            parseFloat(e.target.value)
+                          )
+                        }
+                        min={0.1}
+                        max={10}
+                        step={0.1}
+                        className={`w-20 px-2 py-1 rounded ${
+                          colorMode === "dark"
+                            ? "bg-gray-700 text-white"
+                            : "bg-gray-100 text-gray-900"
+                        }`}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={paramSet.trailingStop}
+                        onChange={(e) =>
+                          handleParameterChange(
+                            setIndex,
+                            "trailingStop",
+                            e.target.checked
+                          )
+                        }
+                        className="rounded text-blue-500 focus:ring-blue-500"
+                      />
+                      <span>Enable Trailing Stop</span>
+                    </label>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      Timeframe
+                    </label>
+                    <select
+                      value={paramSet.timeframe}
+                      onChange={(e) =>
+                        handleParameterChange(
+                          setIndex,
+                          "timeframe",
+                          e.target.value
+                        )
+                      }
+                      className={`w-full px-3 py-2 rounded ${
+                        colorMode === "dark"
+                          ? "bg-gray-700 text-white"
+                          : "bg-gray-100 text-gray-900"
+                      }`}
+                    >
+                      <option value="1m">1 minute</option>
+                      <option value="5m">5 minutes</option>
+                      <option value="15m">15 minutes</option>
+                      <option value="1h">1 hour</option>
+                      <option value="4h">4 hours</option>
+                      <option value="1d">1 day</option>
+                    </select>
+                  </div>
                 </div>
               )}
             </div>

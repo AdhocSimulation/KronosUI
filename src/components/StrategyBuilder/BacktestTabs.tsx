@@ -1,6 +1,7 @@
 import React from "react";
 import { X } from "lucide-react";
 import { BacktestResult } from "../../types/backtest";
+import { getParameterSetColor } from "../../utils/colors";
 
 interface BacktestTabsProps {
   colorMode: "light" | "dark";
@@ -17,17 +18,6 @@ const BacktestTabs: React.FC<BacktestTabsProps> = ({
   onTabChange,
   onTabClose,
 }) => {
-  const getParameterSetColor = (index: number): string => {
-    const colors = [
-      "border-blue-500",
-      "border-green-500",
-      "border-yellow-500",
-      "border-purple-500",
-      "border-pink-500",
-    ];
-    return colors[index % colors.length] || colors[0]; // Fallback to first color if index is out of bounds
-  };
-
   const formatNumber = (num: number, decimals: number = 2) => {
     return new Intl.NumberFormat("en-US", {
       minimumFractionDigits: decimals,
@@ -35,22 +25,20 @@ const BacktestTabs: React.FC<BacktestTabsProps> = ({
     }).format(num);
   };
 
-  if (!results || results.length === 0) {
-    return null;
-  }
-
   return (
     <div className="flex items-center space-x-2 overflow-x-auto pb-2">
       {results.map((result, index) => {
-        // Find the parameter set index from the parameters
+        // Get parameter set index for color synchronization
         const paramSetIndex = result.parameters.find(
           (p) => p.name === "parameterSetIndex"
         )?.value as number;
 
-        // Get strategy name from parameters
+        // Get strategy name
         const strategyName = result.parameters.find(
           (p) => p.name === "strategy"
         )?.value as string;
+
+        const colors = getParameterSetColor(paramSetIndex);
 
         return (
           <div
@@ -63,9 +51,7 @@ const BacktestTabs: React.FC<BacktestTabsProps> = ({
                 : colorMode === "dark"
                 ? "bg-gray-700 text-gray-300 hover:bg-gray-600"
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            } border-l-4 ${getParameterSetColor(
-              typeof paramSetIndex === "number" ? paramSetIndex : index
-            )}`}
+            } border-l-4 ${colors.border}`}
             onClick={() => onTabChange(index)}
           >
             <div className="flex flex-col min-w-[120px]">
