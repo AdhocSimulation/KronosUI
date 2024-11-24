@@ -18,37 +18,37 @@ const Dashboard: React.FC<DashboardProps> = ({ colorMode }) => {
   // Flatten all available tags into a single array
   const availableTags = Object.values(assetTags).flat();
 
-  useEffect(() => {
-    const fetchAssets = async () => {
-      const allAssets = await assetService.getAssets();
+  //   useEffect(() => {
+  //     const fetchAssets = async () => {
+  //       const allAssets = await assetService.getAssets();
 
-      // Generate mock metrics for demonstration
-      const assetsWithMetrics: AssetMetrics[] = allAssets.map((asset) => ({
-        symbol: asset.symbol,
-        name: asset.name,
-        price: asset.basePrice * (0.9 + Math.random() * 0.2),
-        change24h: -15 + Math.random() * 30,
-        volume24h: Math.random() * 1000000000,
-        marketCap: asset.basePrice * (Math.random() * 1000000000),
-        // Assign random tags from each category
-        tags: Object.values(assetTags).map(
-          (category) => category[Math.floor(Math.random() * category.length)]
-        ),
-        indicators: {
-          crossMA: -1 + Math.random() * 2,
-          betaTrend: -2 + Math.random() * 4,
-          betaVol: Math.random() * 2,
-          ornsteinUhlenbeck: -1 + Math.random() * 2,
-          residualPCA: -3 + Math.random() * 6,
-          zScore1Y: -2 + Math.random() * 4,
-        },
-      }));
+  //       // Generate mock metrics for demonstration
+  //       const assetsWithMetrics: AssetMetrics[] = allAssets.map((asset) => ({
+  //         symbol: asset.symbol,
+  //         name: asset.name,
+  //         price: asset.basePrice * (0.9 + Math.random() * 0.2),
+  //         change24h: -15 + Math.random() * 30,
+  //         volume24h: Math.random() * 1000000000,
+  //         marketCap: asset.basePrice * (Math.random() * 1000000000),
+  //         // Assign random tags from each category
+  //         tags: Object.values(assetTags).map(
+  //           (category) => category[Math.floor(Math.random() * category.length)]
+  //         ),
+  //         indicators: {
+  //           crossMA: -1 + Math.random() * 2,
+  //           betaTrend: -2 + Math.random() * 4,
+  //           betaVol: Math.random() * 2,
+  //           ornsteinUhlenbeck: -1 + Math.random() * 2,
+  //           residualPCA: -3 + Math.random() * 6,
+  //           zScore1Y: -2 + Math.random() * 4,
+  //         },
+  //       }));
 
-      setAssets(assetsWithMetrics);
-    };
+  //       setAssets(assetsWithMetrics);
+  //     };
 
-    fetchAssets();
-  }, []);
+  //     fetchAssets();
+  //   }, []);
 
   const handleTagSelect = (tag: string) => {
     setSelectedTags([...selectedTags, tag]);

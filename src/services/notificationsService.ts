@@ -2,7 +2,7 @@ import {
   Notification,
   NotificationPriority,
   NotificationCategory,
-} from "../types/notification";
+} from "../types/notifications";
 
 type NotificationCallback = (notification: Notification) => void;
 

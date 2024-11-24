@@ -63,13 +63,30 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
   const [availableStocks, setAvailableStocks] = useState<string[]>([]);
   const chartRef = useRef<HighchartsReact.RefObject>(null);
   const extremesTimeout = useRef<NodeJS.Timeout>();
+  const mounted = useRef(false);
+  const assetsLoaded = useRef(false);
 
   useEffect(() => {
-    const loadAssets = async () => {
-      const assets = await assetService.getAssets();
-      setAvailableStocks(assets.map(asset => asset.symbol));
+    mounted.current = true;
+
+    if (!assetsLoaded.current) {
+      assetsLoaded.current = true;
+      const loadAssets = async () => {
+        try {
+          const assets = await assetService.getAssets();
+          if (mounted.current) {
+            setAvailableStocks(assets.map((asset) => asset.symbol));
+          }
+        } catch (error) {
+          console.error("Error loading assets:", error);
+        }
+      };
+      loadAssets();
+    }
+
+    return () => {
+      mounted.current = false;
     };
-    loadAssets();
   }, []);
 
   const handleStockChange = (stock: string) => {
@@ -102,15 +119,21 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
   }, [chartExtremes]);
 
   useEffect(() => {
+    if (!mounted.current) return;
+
     const loadStockData = async () => {
       setIsLoading(true);
       try {
         const data = await fetchStockData(selectedStock, selectedGranularity);
-        setStockData(data);
+        if (mounted.current) {
+          setStockData(data);
+        }
       } catch (error) {
         console.error("Error fetching stock data:", error);
       } finally {
-        setIsLoading(false);
+        if (mounted.current) {
+          setIsLoading(false);
+        }
       }
     };
 
