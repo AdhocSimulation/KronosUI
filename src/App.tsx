@@ -27,6 +27,7 @@ import Login from "./components/Login";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ChartProvider } from "./contexts/ChartContext";
 import { EventsProvider } from "./contexts/EventsContext";
+import { NotificationsProvider } from "./contexts/NotificationsContext";
 import "./styles/chart.css";
 import Portfolio from "./components/Portfolio/Portfolio";
 import MonitoringDashboard from "./components/Monitoring/MonitoringDashboard";
@@ -34,6 +35,8 @@ import ServiceDetails from "./components/Monitoring/ServiceDetails";
 import EventsCalendar from "./components/Events/EventsCalendar";
 import BacktestDashboard from "./components/StrategyBuilder/BacktestDashboard";
 import Dashboard from "./components/Dashboard/Dashboard";
+import NotificationBell from "./components/Notifications/NotificationBell";
+import NotificationPanel from "./components/Notifications/NotificationPanel";
 
 function App() {
   const [colorMode, setColorMode] = React.useState<"light" | "dark">("light");
@@ -46,12 +49,14 @@ function App() {
     <AuthProvider>
       <ChartProvider>
         <EventsProvider>
-          <Router>
-            <AppContent
-              colorMode={colorMode}
-              toggleColorMode={toggleColorMode}
-            />
-          </Router>
+          <NotificationsProvider>
+            <Router>
+              <AppContent
+                colorMode={colorMode}
+                toggleColorMode={toggleColorMode}
+              />
+            </Router>
+          </NotificationsProvider>
         </EventsProvider>
       </ChartProvider>
     </AuthProvider>
@@ -70,12 +75,6 @@ function AppContent({
 
   const menuItems = [
     { path: "/", label: "Home", icon: HomeIcon },
-    {
-      path: "/dashboard",
-      label: "Dashboard",
-      icon: LayoutDashboard,
-      requireAuth: true,
-    },
     { path: "/chart", label: "Live Chart", icon: BarChart2, requireAuth: true },
     {
       path: "/portfolios",
@@ -93,6 +92,12 @@ function AppContent({
       path: "/events",
       label: "Events",
       icon: Calendar,
+      requireAuth: true,
+    },
+    {
+      path: "/dashboard",
+      label: "Dashboard",
+      icon: LayoutDashboard,
       requireAuth: true,
     },
     {
@@ -136,6 +141,7 @@ function AppContent({
               </div>
             </div>
             <div className="flex items-center">
+              {isAuthenticated && <NotificationBell colorMode={colorMode} />}
               {isAuthenticated ? (
                 <button
                   onClick={logout}
@@ -178,14 +184,6 @@ function AppContent({
         <Routes>
           <Route path="/" element={<Home colorMode={colorMode} />} />
           <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard colorMode={colorMode} />
-              </ProtectedRoute>
-            }
-          />
-          <Route
             path="/chart"
             element={
               <ProtectedRoute>
@@ -218,6 +216,14 @@ function AppContent({
             }
           />
           <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard colorMode={colorMode} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/monitoring"
             element={
               <ProtectedRoute>
@@ -237,6 +243,8 @@ function AppContent({
           <Route path="/login" element={<Login colorMode={colorMode} />} />
         </Routes>
       </main>
+
+      {isAuthenticated && <NotificationPanel colorMode={colorMode} />}
     </div>
   );
 }
