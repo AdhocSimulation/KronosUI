@@ -33,6 +33,7 @@ import MonitoringDashboard from "./components/Monitoring/MonitoringDashboard";
 import ServiceDetails from "./components/Monitoring/ServiceDetails";
 import EventsCalendar from "./components/Events/EventsCalendar";
 import BacktestDashboard from "./components/StrategyBuilder/BacktestDashboard";
+import Dashboard from "./components/Dashboard/Dashboard";
 
 function App() {
   const [colorMode, setColorMode] = React.useState<"light" | "dark">("light");
@@ -69,6 +70,12 @@ function AppContent({
 
   const menuItems = [
     { path: "/", label: "Home", icon: HomeIcon },
+    {
+      path: "/dashboard",
+      label: "Dashboard",
+      icon: LayoutDashboard,
+      requireAuth: true,
+    },
     { path: "/chart", label: "Live Chart", icon: BarChart2, requireAuth: true },
     {
       path: "/portfolios",
@@ -86,12 +93,6 @@ function AppContent({
       path: "/events",
       label: "Events",
       icon: Calendar,
-      requireAuth: true,
-    },
-    {
-      path: "/dashboard",
-      label: "Dashboard",
-      icon: LayoutDashboard,
       requireAuth: true,
     },
     {
@@ -177,6 +178,14 @@ function AppContent({
         <Routes>
           <Route path="/" element={<Home colorMode={colorMode} />} />
           <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard colorMode={colorMode} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/chart"
             element={
               <ProtectedRoute>
@@ -205,14 +214,6 @@ function AppContent({
             element={
               <ProtectedRoute>
                 <EventsCalendar colorMode={colorMode} />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <div>Dashboard content</div>
               </ProtectedRoute>
             }
           />
