@@ -88,7 +88,7 @@ function Portfolio({ colorMode }: PortfolioProps) {
       selectedStock: position.asset,
       selectedStrategies: [{ name: position.strategy }],
       selectedSignals: [],
-      selectedGranularity: "daily",
+      selectedGranularity: "1m",
       chartExtremes: {
         min: startDate,
         max: endDate,

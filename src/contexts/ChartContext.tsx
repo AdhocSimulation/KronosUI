@@ -39,10 +39,10 @@ interface ChartContextType {
 }
 
 const defaultChartState: ChartState = {
-  selectedStock: "AAPL",
+  selectedStock: "BTCUSDT",
   selectedStrategies: [],
   selectedSignals: [],
-  selectedGranularity: "daily",
+  selectedGranularity: "1m",
   selectedChartType: "candlestick",
   chartExtremes: {
     min: Date.now() - 30 * 24 * 60 * 60 * 1000,

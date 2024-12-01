@@ -4,7 +4,7 @@ import HighchartsReact from "highcharts-react-official";
 import { BarChart, CandlestickChart, LineChart } from "lucide-react";
 import {
   SignalData,
-  StockData,
+  BarData,
   StrategyData,
   StrategyEvent,
   FinancialChartProps,
@@ -13,21 +13,21 @@ import ChartTooltip from "./ChartTooltip";
 import ChartWithControls from "./ChartWithControls";
 import ChartSection from "./ChartSection";
 import AlertsSection from "./AlertsSection";
-import { fetchStockData } from "../utils/stockData";
+import { fetchAssetData } from "../utils/stockData";
 import { drawStrategyEvents } from "../utils/eventHelper";
 import { getChartConfiguration } from "../utils/chartConfig";
 import { useChart } from "../contexts/ChartContext";
 import { assetService } from "../services/assetService";
 
 const timeGranularities = [
-  { value: "1min", label: "1m" },
-  { value: "5min", label: "5m" },
-  { value: "15min", label: "15m" },
-  { value: "30min", label: "30m" },
-  { value: "60min", label: "1h" },
-  { value: "daily", label: "1D" },
-  { value: "weekly", label: "1W" },
-  { value: "monthly", label: "1M" },
+  { value: "1m", label: "1m" },
+  { value: "5m", label: "5m" },
+  { value: "15m", label: "15m" },
+  { value: "30m", label: "30m" },
+  { value: "60m", label: "1h" },
+  { value: "1d", label: "1D" },
+  { value: "1w", label: "1W" },
+  { value: "1M", label: "1M" },
 ];
 
 const chartTypes = [
@@ -50,7 +50,7 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
     updateChartState,
   } = useChart();
 
-  const [stockData, setStockData] = useState<StockData[]>([]);
+  const [stockData, setStockData] = useState<BarData[]>([]);
   const [isIndicatorsPopupOpen, setIsIndicatorsPopupOpen] = useState(false);
   const [events, setEvents] = useState<StrategyEvent[]>([]);
   const [strategyData, setStrategyData] = useState<{
@@ -124,7 +124,7 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
     const loadStockData = async () => {
       setIsLoading(true);
       try {
-        const data = await fetchStockData(selectedStock, selectedGranularity);
+        const data = await fetchAssetData(selectedStock, selectedGranularity);
         if (mounted.current) {
           setStockData(data);
         }

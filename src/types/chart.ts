@@ -15,7 +15,7 @@ export interface Strategy {
   name: string;
 }
 
-export interface StockData {
+export interface BarData {
   date: number;
   open: number;
   high: number;
