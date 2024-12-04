@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { FileCheck, Filter, AlertTriangle, CheckCircle } from "lucide-react";
+import { useWorkflow } from "../../hooks/useWorkflow";
 
 interface DataCleanupWorkflowProps {
   colorMode: "light" | "dark";
@@ -57,12 +58,25 @@ const DataCleanupWorkflow: React.FC<DataCleanupWorkflowProps> = ({
     },
   ]);
 
-  const [isRunning, setIsRunning] = useState(false);
   const [results, setResults] = useState<{
     processed: number;
     cleaned: number;
     errors: number;
   } | null>(null);
+
+  const { cleanup, isLoading, error } = useWorkflow({
+    onSuccess: (response) => {
+      setResults({
+        processed: response.data.processed,
+        cleaned: response.data.cleaned,
+        errors: response.data.errors,
+      });
+    },
+    onError: (error) => {
+      console.error("Cleanup failed:", error);
+      setResults(null);
+    },
+  });
 
   const handleToggleRule = (ruleId: string) => {
     setRules((prev) =>
@@ -73,18 +87,16 @@ const DataCleanupWorkflow: React.FC<DataCleanupWorkflowProps> = ({
   };
 
   const handleRunCleanup = async () => {
-    setIsRunning(true);
-    setResults(null);
-
-    // Simulate cleanup process
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-
-    setResults({
-      processed: 1000000,
-      cleaned: 15420,
-      errors: 42,
-    });
-    setIsRunning(false);
+    try {
+      await cleanup({
+        rules: rules.map((rule) => ({
+          id: rule.id,
+          enabled: rule.enabled,
+        })),
+      });
+    } catch (error) {
+      console.error("Error during cleanup:", error);
+    }
   };
 
   const getSeverityColor = (severity: CleanupRule["severity"]) => {
@@ -109,6 +121,9 @@ const DataCleanupWorkflow: React.FC<DataCleanupWorkflowProps> = ({
         >
           Clean and normalize historical market data
         </p>
+        {error && (
+          <div className="mt-2 text-red-500 text-sm">{error.message}</div>
+        )}
       </div>
 
       <div
@@ -173,9 +188,9 @@ const DataCleanupWorkflow: React.FC<DataCleanupWorkflowProps> = ({
       <div className="flex items-center justify-between">
         <button
           onClick={handleRunCleanup}
-          disabled={isRunning || !rules.some((r) => r.enabled)}
+          disabled={isLoading || !rules.some((r) => r.enabled)}
           className={`flex items-center space-x-2 px-4 py-2 rounded-lg ${
-            isRunning || !rules.some((r) => r.enabled)
+            isLoading || !rules.some((r) => r.enabled)
               ? "bg-gray-400 cursor-not-allowed"
               : colorMode === "dark"
               ? "bg-blue-600 hover:bg-blue-700"
@@ -183,7 +198,7 @@ const DataCleanupWorkflow: React.FC<DataCleanupWorkflowProps> = ({
           } text-white transition-colors duration-200`}
         >
           <FileCheck className="w-4 h-4" />
-          <span>{isRunning ? "Running Cleanup..." : "Run Cleanup"}</span>
+          <span>{isLoading ? "Running Cleanup..." : "Run Cleanup"}</span>
         </button>
 
         {results && (

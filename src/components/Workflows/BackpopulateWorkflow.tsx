@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Calendar, Clock, Database, Download, Server } from "lucide-react";
 import AssetSelector from "../StrategyBuilder/AssetSelector";
+import { useWorkflow } from "../../hooks/useWorkflow";
 
 interface BackpopulateWorkflowProps {
   colorMode: "light" | "dark";
@@ -45,25 +46,34 @@ const BackpopulateWorkflow: React.FC<BackpopulateWorkflowProps> = ({
   const [selectedTimeframes, setSelectedTimeframes] = useState<string[]>([]);
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
-  const [isRunning, setIsRunning] = useState(false);
   const [progress, setProgress] = useState(0);
+
+  const { backpopulate, isLoading, error } = useWorkflow({
+    onSuccess: (response) => {
+      console.log("Backpopulate completed:", response);
+      setProgress(100);
+    },
+    onError: (error) => {
+      console.error("Backpopulate failed:", error);
+      setProgress(0);
+    },
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsRunning(true);
     setProgress(0);
 
-    // Simulate progress
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setIsRunning(false);
-          return 100;
-        }
-        return prev + 1;
+    try {
+      await backpopulate({
+        assets: selectedAssets,
+        sources: selectedSources,
+        timeframes: selectedTimeframes,
+        startDate,
+        endDate,
       });
-    }, 100);
+    } catch (error) {
+      console.error("Error during backpopulate:", error);
+    }
   };
 
   return (
@@ -78,6 +88,9 @@ const BackpopulateWorkflow: React.FC<BackpopulateWorkflowProps> = ({
           Fetch and store historical market data for selected assets and
           timeframes
         </p>
+        {error && (
+          <div className="mt-2 text-red-500 text-sm">{error.message}</div>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -208,7 +221,7 @@ const BackpopulateWorkflow: React.FC<BackpopulateWorkflowProps> = ({
           <button
             type="submit"
             disabled={
-              isRunning ||
+              isLoading ||
               !selectedAssets.length ||
               !selectedSources.length ||
               !selectedTimeframes.length ||
@@ -216,7 +229,7 @@ const BackpopulateWorkflow: React.FC<BackpopulateWorkflowProps> = ({
               !endDate
             }
             className={`flex items-center space-x-2 px-4 py-2 rounded-lg ${
-              isRunning ||
+              isLoading ||
               !selectedAssets.length ||
               !selectedSources.length ||
               !selectedTimeframes.length ||
@@ -229,10 +242,10 @@ const BackpopulateWorkflow: React.FC<BackpopulateWorkflowProps> = ({
             } text-white transition-colors duration-200`}
           >
             <Download className="w-4 h-4" />
-            <span>{isRunning ? "Running..." : "Start Backpopulation"}</span>
+            <span>{isLoading ? "Running..." : "Start Backpopulation"}</span>
           </button>
 
-          {isRunning && (
+          {isLoading && (
             <div className="flex items-center space-x-4">
               <div className="text-sm">{progress}% Complete</div>
               <div className="w-64 h-2 bg-gray-200 rounded-full overflow-hidden">
