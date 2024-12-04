@@ -6,6 +6,7 @@ interface AssetSelectorProps {
   availableAssets: string[];
   selectedAssets: string[];
   onAssetChange: (assets: string[]) => void;
+  placeholder?: string;
 }
 
 const AssetSelector: React.FC<AssetSelectorProps> = ({
@@ -13,6 +14,7 @@ const AssetSelector: React.FC<AssetSelectorProps> = ({
   availableAssets,
   selectedAssets,
   onAssetChange,
+  placeholder = "Select assets...",
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -64,7 +66,7 @@ const AssetSelector: React.FC<AssetSelectorProps> = ({
                 colorMode === "dark" ? "text-gray-400" : "text-gray-500"
               }`}
             >
-              Select assets...
+              {placeholder}
             </span>
           )}
         </div>

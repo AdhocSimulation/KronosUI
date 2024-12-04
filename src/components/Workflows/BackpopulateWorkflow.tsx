@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Calendar, Clock, Database, Download } from "lucide-react";
+import { Calendar, Clock, Database, Download, Server } from "lucide-react";
 import AssetSelector from "../StrategyBuilder/AssetSelector";
 
 interface BackpopulateWorkflowProps {
@@ -17,6 +17,17 @@ const availableAssets = [
   "MATICUSDT",
 ];
 
+const availableSources = [
+  "Binance",
+  "Coinbase",
+  "Kraken",
+  "FTX",
+  "Huobi",
+  "KuCoin",
+  "Bitfinex",
+  "OKX",
+];
+
 const timeframes = [
   { value: "1m", label: "1 minute" },
   { value: "5m", label: "5 minutes" },
@@ -30,6 +41,7 @@ const BackpopulateWorkflow: React.FC<BackpopulateWorkflowProps> = ({
   colorMode,
 }) => {
   const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
+  const [selectedSources, setSelectedSources] = useState<string[]>([]);
   const [selectedTimeframes, setSelectedTimeframes] = useState<string[]>([]);
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
@@ -75,19 +87,38 @@ const BackpopulateWorkflow: React.FC<BackpopulateWorkflowProps> = ({
           } shadow-sm`}
         >
           <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                <div className="flex items-center space-x-2">
-                  <Database className="w-4 h-4" />
-                  <span>Select Assets</span>
-                </div>
-              </label>
-              <AssetSelector
-                colorMode={colorMode}
-                availableAssets={availableAssets}
-                selectedAssets={selectedAssets}
-                onAssetChange={setSelectedAssets}
-              />
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  <div className="flex items-center space-x-2">
+                    <Database className="w-4 h-4" />
+                    <span>Select Assets</span>
+                  </div>
+                </label>
+                <AssetSelector
+                  colorMode={colorMode}
+                  availableAssets={availableAssets}
+                  selectedAssets={selectedAssets}
+                  onAssetChange={setSelectedAssets}
+                  placeholder="Select assets..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  <div className="flex items-center space-x-2">
+                    <Server className="w-4 h-4" />
+                    <span>Select Sources</span>
+                  </div>
+                </label>
+                <AssetSelector
+                  colorMode={colorMode}
+                  availableAssets={availableSources}
+                  selectedAssets={selectedSources}
+                  onAssetChange={setSelectedSources}
+                  placeholder="Select sources..."
+                />
+              </div>
             </div>
 
             <div>
@@ -179,6 +210,7 @@ const BackpopulateWorkflow: React.FC<BackpopulateWorkflowProps> = ({
             disabled={
               isRunning ||
               !selectedAssets.length ||
+              !selectedSources.length ||
               !selectedTimeframes.length ||
               !startDate ||
               !endDate
@@ -186,6 +218,7 @@ const BackpopulateWorkflow: React.FC<BackpopulateWorkflowProps> = ({
             className={`flex items-center space-x-2 px-4 py-2 rounded-lg ${
               isRunning ||
               !selectedAssets.length ||
+              !selectedSources.length ||
               !selectedTimeframes.length ||
               !startDate ||
               !endDate
