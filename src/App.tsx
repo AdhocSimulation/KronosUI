@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   BrowserRouter as Router,
   Route,
@@ -19,6 +19,7 @@ import {
   Calendar,
   LayoutDashboard,
   Activity,
+  Database,
 } from "lucide-react";
 import FinancialChart from "./components/FinancialChart";
 import Home from "./components/Home";
@@ -37,9 +38,10 @@ import BacktestDashboard from "./components/StrategyBuilder/BacktestDashboard";
 import Dashboard from "./components/Dashboard/Dashboard";
 import NotificationBell from "./components/Notifications/NotificationBell";
 import NotificationPanel from "./components/Notifications/NotificationPanel";
+import WorkflowsPage from "./components/Workflows/WorkflowsPage";
 
 function App() {
-  const [colorMode, setColorMode] = React.useState<"light" | "dark">("light");
+  const [colorMode, setColorMode] = useState<"light" | "dark">("light");
 
   const toggleColorMode = () => {
     setColorMode((prev) => (prev === "light" ? "dark" : "light"));
@@ -98,6 +100,12 @@ function AppContent({
       path: "/dashboard",
       label: "Dashboard",
       icon: LayoutDashboard,
+      requireAuth: true,
+    },
+    {
+      path: "/workflows",
+      label: "Workflows",
+      icon: Database,
       requireAuth: true,
     },
     {
@@ -161,13 +169,14 @@ function AppContent({
               )}
               <button
                 onClick={toggleColorMode}
-                className={`ml-4 p-2 rounded-full ${
+                className={`ml-4 p-1.5 rounded-full transition-colors duration-200 ${
                   colorMode === "dark"
-                    ? "bg-gray-700 text-yellow-400"
-                    : "bg-gray-200 text-gray-800"
+                    ? "bg-gray-700 text-yellow-400 hover:bg-gray-600"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 }`}
+                aria-label="Toggle color mode"
               >
-                {colorMode === "dark" ? <Sun size={24} /> : <Moon size={24} />}
+                {colorMode === "dark" ? <Sun size={18} /> : <Moon size={18} />}
               </button>
             </div>
           </div>
@@ -220,6 +229,14 @@ function AppContent({
             element={
               <ProtectedRoute>
                 <Dashboard colorMode={colorMode} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/workflows"
+            element={
+              <ProtectedRoute>
+                <WorkflowsPage colorMode={colorMode} />
               </ProtectedRoute>
             }
           />
