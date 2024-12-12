@@ -42,3 +42,27 @@ export interface WorkflowMetrics {
     disk: number;
   };
 }
+
+export interface WorkflowInfo {
+  id: string;
+  name: string;
+  type: WorkflowType;
+}
+
+export interface WorkflowStep {
+  id: string;
+  workflows: WorkflowInfo[];
+  isParallel: boolean;
+}
+
+export interface Schedule {
+  id: string;
+  name: string;
+  description: string;
+  cronExpression: string;
+  steps: WorkflowStep[];
+  enabled: boolean;
+  nextRun: Date;
+  lastRun?: Date;
+  status: "active" | "paused" | "error";
+}

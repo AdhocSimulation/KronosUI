@@ -8,6 +8,7 @@ import {
   Workflow,
   FileSearch,
   Scale,
+  Calendar,
 } from "lucide-react";
 
 interface WorkflowItem {
@@ -21,6 +22,8 @@ interface WorkflowSidebarProps {
   colorMode: "light" | "dark";
   selectedWorkflow: string;
   onSelectWorkflow: (id: string) => void;
+  showSchedules: boolean;
+  onToggleSchedules: () => void;
 }
 
 export const workflowItems: WorkflowItem[] = [
@@ -72,6 +75,8 @@ const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({
   colorMode,
   selectedWorkflow,
   onSelectWorkflow,
+  showSchedules,
+  onToggleSchedules,
 }) => {
   return (
     <div
@@ -80,6 +85,39 @@ const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({
       }`}
     >
       <div className="p-4">
+        <button
+          onClick={onToggleSchedules}
+          className={`w-full text-left p-3 rounded-lg transition-colors duration-200 mb-4 ${
+            showSchedules
+              ? colorMode === "dark"
+                ? "bg-blue-600 text-white"
+                : "bg-blue-50 text-blue-700"
+              : colorMode === "dark"
+              ? "hover:bg-gray-700"
+              : "hover:bg-gray-100"
+          }`}
+        >
+          <div className="flex items-center space-x-3">
+            <Calendar className="w-5 h-5" />
+            <div>
+              <div className="font-medium">Schedules</div>
+              <div
+                className={`text-xs ${
+                  showSchedules
+                    ? colorMode === "dark"
+                      ? "text-blue-200"
+                      : "text-blue-600"
+                    : colorMode === "dark"
+                    ? "text-gray-400"
+                    : "text-gray-500"
+                }`}
+              >
+                Manage workflow automation
+              </div>
+            </div>
+          </div>
+        </button>
+
         <h2 className="text-lg font-semibold mb-4">Workflows</h2>
         <div className="space-y-2">
           {workflowItems.map((workflow) => {
@@ -87,9 +125,14 @@ const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({
             return (
               <button
                 key={workflow.id}
-                onClick={() => onSelectWorkflow(workflow.id)}
+                onClick={() => {
+                  onSelectWorkflow(workflow.id);
+                  if (showSchedules) {
+                    onToggleSchedules();
+                  }
+                }}
                 className={`w-full text-left p-3 rounded-lg transition-colors duration-200 ${
-                  selectedWorkflow === workflow.id
+                  selectedWorkflow === workflow.id && !showSchedules
                     ? colorMode === "dark"
                       ? "bg-blue-600 text-white"
                       : "bg-blue-50 text-blue-700"
@@ -104,7 +147,7 @@ const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({
                     <div className="font-medium">{workflow.name}</div>
                     <div
                       className={`text-xs ${
-                        selectedWorkflow === workflow.id
+                        selectedWorkflow === workflow.id && !showSchedules
                           ? colorMode === "dark"
                             ? "text-blue-200"
                             : "text-blue-600"

@@ -52,6 +52,7 @@ export const workflowService = {
     params: BackpopulateParams
   ): Promise<WorkflowResponse> => {
     try {
+      console.log(params);
       return await apiService.post("/workflows/backpopulate", params);
     } catch (error) {
       console.error("Error in backpopulate workflow:", error);

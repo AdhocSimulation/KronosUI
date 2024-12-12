@@ -4,6 +4,7 @@ import BackpopulateWorkflow from "./BackpopulateWorkflow";
 import DataSyncWorkflow from "./DataSyncWorkflow";
 import DataCleanupWorkflow from "./DataCleanupWorkflow";
 import DataValidationWorkflow from "./DataValidationWorkflow";
+import SchedulesPage from "./Schedules/SchedulesPage";
 
 interface WorkflowsPageProps {
   colorMode: "light" | "dark";
@@ -11,8 +12,13 @@ interface WorkflowsPageProps {
 
 const WorkflowsPage: React.FC<WorkflowsPageProps> = ({ colorMode }) => {
   const [selectedWorkflow, setSelectedWorkflow] = useState(workflowItems[0].id);
+  const [showSchedules, setShowSchedules] = useState(false);
 
   const renderWorkflowContent = () => {
+    if (showSchedules) {
+      return <SchedulesPage colorMode={colorMode} />;
+    }
+
     switch (selectedWorkflow) {
       case "backpopulate":
         return <BackpopulateWorkflow colorMode={colorMode} />;
@@ -55,6 +61,8 @@ const WorkflowsPage: React.FC<WorkflowsPageProps> = ({ colorMode }) => {
           colorMode={colorMode}
           selectedWorkflow={selectedWorkflow}
           onSelectWorkflow={setSelectedWorkflow}
+          showSchedules={showSchedules}
+          onToggleSchedules={() => setShowSchedules(!showSchedules)}
         />
         <div className="flex-1 overflow-auto">{renderWorkflowContent()}</div>
       </div>
