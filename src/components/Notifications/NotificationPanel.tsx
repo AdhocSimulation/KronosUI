@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from "react";
 import { format } from "date-fns";
-import { Bell, X, Check, CheckCheck, ExternalLink } from "lucide-react";
+import { Bell, X, Check, CheckCheck } from "lucide-react";
 import { useNotifications } from "../../contexts/NotificationsContext";
 import { Notification } from "../../types/notification";
 
@@ -61,12 +61,27 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ colorMode }) => {
     >
       {/* Header */}
       <div className="p-4 border-b border-gray-700 flex items-center justify-between">
-        <h2 className="text-xl font-bold">Notifications</h2>
+        <div className="flex items-center space-x-2">
+          <Bell
+            className={`w-5 h-5 ${
+              colorMode === "dark" ? "text-gray-300" : "text-gray-700"
+            }`}
+          />
+          <h2
+            className={`text-xl font-bold ${
+              colorMode === "dark" ? "text-gray-300" : "text-gray-700"
+            }`}
+          >
+            Notifications
+          </h2>
+        </div>
         <div className="flex items-center space-x-2">
           <button
             onClick={markAllAsRead}
-            className={`p-2 rounded-lg ${
-              colorMode === "dark" ? "hover:bg-gray-700" : "hover:bg-gray-100"
+            className={`p-2 rounded-lg transition-colors duration-200 ${
+              colorMode === "dark"
+                ? "text-gray-300 hover:bg-gray-700 hover:text-white"
+                : "text-gray-700 hover:bg-gray-200 hover:text-gray-900"
             }`}
             title="Mark all as read"
           >
@@ -74,8 +89,10 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ colorMode }) => {
           </button>
           <button
             onClick={togglePanel}
-            className={`p-2 rounded-lg ${
-              colorMode === "dark" ? "hover:bg-gray-700" : "hover:bg-gray-100"
+            className={`p-2 rounded-lg transition-colors duration-200 ${
+              colorMode === "dark"
+                ? "text-gray-300 hover:bg-gray-700 hover:text-white"
+                : "text-gray-700 hover:bg-gray-200 hover:text-gray-900"
             }`}
           >
             <X className="w-5 h-5" />
@@ -136,40 +153,27 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ colorMode }) => {
                     </span>
                   </div>
                 </div>
+
                 <div className="flex items-center space-x-2 ml-2">
                   {!notification.read && (
                     <button
                       onClick={() => markAsRead(notification.id)}
-                      className={`p-1 rounded-lg ${
+                      className={`p-1.5 rounded-lg transition-colors duration-200 ${
                         colorMode === "dark"
-                          ? "hover:bg-gray-600"
-                          : "hover:bg-gray-200"
+                          ? "text-gray-300 hover:bg-gray-600 hover:text-white"
+                          : "text-gray-700 hover:bg-gray-200 hover:text-gray-900"
                       }`}
                       title="Mark as read"
                     >
                       <Check className="w-4 h-4" />
                     </button>
                   )}
-                  {notification.link && (
-                    <a
-                      href={notification.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`p-1 rounded-lg ${
-                        colorMode === "dark"
-                          ? "hover:bg-gray-600"
-                          : "hover:bg-gray-200"
-                      }`}
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                    </a>
-                  )}
                   <button
                     onClick={() => clearNotification(notification.id)}
-                    className={`p-1 rounded-lg ${
+                    className={`p-1.5 rounded-lg transition-colors duration-200 ${
                       colorMode === "dark"
-                        ? "hover:bg-gray-600"
-                        : "hover:bg-gray-200"
+                        ? "text-gray-300 hover:bg-gray-600 hover:text-white"
+                        : "text-gray-700 hover:bg-gray-200 hover:text-gray-900"
                     }`}
                     title="Clear notification"
                   >

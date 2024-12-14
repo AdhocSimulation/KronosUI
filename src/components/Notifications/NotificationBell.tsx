@@ -13,7 +13,9 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ colorMode }) => {
     <button
       onClick={togglePanel}
       className={`relative p-2 rounded-lg ${
-        colorMode === "dark" ? "hover:bg-gray-700" : "hover:bg-gray-200"
+        colorMode === "dark"
+          ? "text-gray-300 hover:bg-gray-700 hover:text-white"
+          : "text-gray-700 hover:bg-gray-200 hover:text-gray-900"
       }`}
     >
       <Bell className="w-5 h-5" />
