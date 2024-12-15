@@ -9,7 +9,6 @@ import {
   StrategyEvent,
   FinancialChartProps,
 } from "../types/chart";
-import ChartTooltip from "./ChartTooltip";
 import ChartWithControls from "./ChartWithControls";
 import ChartSection from "./ChartSection";
 import AlertsSection from "./AlertsSection";
@@ -124,7 +123,10 @@ function FinancialChart({ colorMode }: FinancialChartProps) {
     const loadStockData = async () => {
       setIsLoading(true);
       try {
-        const data = await fetchAssetData(selectedStock, selectedGranularity);
+        const data = await assetService.getAssetTimeSeries(
+          selectedStock,
+          selectedGranularity
+        );
         if (mounted.current) {
           setStockData(data);
         }

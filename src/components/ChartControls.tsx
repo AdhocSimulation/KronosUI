@@ -59,13 +59,13 @@ const ChartControls: React.FC<ChartControlsProps> = ({
       } rounded-lg p-2`}
     >
       {/* Stock Search */}
-      <div className="relative w-48" ref={searchRef}>
+      <div className="relative w-60" ref={searchRef}>
         <input
           type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           onFocus={() => setIsSearchOpen(true)}
-          placeholder="Search stocks..."
+          placeholder="Search assets..."
           className={`w-full px-3 py-1.5 pl-9 text-sm rounded-lg border ${
             colorMode === "dark"
               ? "bg-gray-700 border-gray-600 text-white"

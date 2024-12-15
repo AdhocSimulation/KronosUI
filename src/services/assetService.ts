@@ -1,4 +1,5 @@
 import { apiService } from "./apiService";
+import { BarData } from "../types/chart";
 
 export interface Asset {
   symbol: string;
@@ -7,7 +8,7 @@ export interface Asset {
   basePrice: number;
 }
 
-// Mock data for now
+// Mock data for assets
 const mockAssets: Asset[] = [
   { symbol: "AAPL", name: "Apple Inc.", type: "stock", basePrice: 175 },
   { symbol: "GOOGL", name: "Alphabet Inc.", type: "stock", basePrice: 140 },
@@ -64,9 +65,8 @@ export const assetService = {
   getAssets: async (): Promise<Asset[]> => {
     try {
       // In production, use this:
-      return await apiService.get<Asset[]>("/assets");
-
-      //return await apiService.mockApiCall(mockAssets);
+      // return await apiService.get<Asset[]>("/assets");
+      return await apiService.mockApiCall(mockAssets);
     } catch (error) {
       console.error("Error fetching assets:", error);
       throw new Error("Failed to fetch assets");
@@ -78,7 +78,6 @@ export const assetService = {
     try {
       // In production, use this:
       // return await apiService.get<Asset[]>(`/assets/type/${type}`);
-
       const filteredAssets = mockAssets.filter((asset) => asset.type === type);
       return await apiService.mockApiCall(filteredAssets);
     } catch (error) {
@@ -92,7 +91,6 @@ export const assetService = {
     try {
       // In production, use this:
       // return await apiService.get<Asset>(`/assets/${symbol}`);
-
       const asset = mockAssets.find((asset) => asset.symbol === symbol);
       return await apiService.mockApiCall(asset);
     } catch (error) {
@@ -106,4 +104,54 @@ export const assetService = {
     const asset = mockAssets.find((a) => a.symbol === symbol);
     return asset?.basePrice || 100;
   },
+
+  // Get asset time series data
+  getAssetTimeSeries: async (
+    symbol: string,
+    granularity: string
+  ): Promise<BarData[]> => {
+    try {
+      // In production, use this:
+      /*
+      const response = await apiService.get<BarData[]>(
+        `assets/timeseries?symbol=${symbol}&granularity=${granularity}`
+      );
+      return response;
+      */
+
+      // For development, use mock data
+      return await apiService.mockApiCall(generatePlaceholderData(symbol));
+    } catch (error) {
+      console.error("Error fetching asset time series:", error);
+      throw new Error("Failed to fetch asset time series");
+    }
+  },
+};
+
+// Helper function to generate mock time series data
+const generatePlaceholderData = (symbol: string): BarData[] => {
+  const data: BarData[] = [];
+  const startDate = new Date();
+  startDate.setFullYear(startDate.getFullYear() - 1);
+  startDate.setHours(2, 0, 0);
+
+  const basePrice = assetService.getBasePrice(symbol);
+
+  for (let i = 0; i < 365; i++) {
+    const date = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000);
+    const price =
+      basePrice +
+      Math.sin(i / 10) * (basePrice * 0.2) +
+      Math.random() * (basePrice * 0.1);
+    data.push({
+      date: date.getTime(),
+      open: price,
+      high: price + Math.random() * (basePrice * 0.05),
+      low: price - Math.random() * (basePrice * 0.05),
+      close: price + Math.random() * (basePrice * 0.02) - basePrice * 0.01,
+      volume: Math.floor(Math.random() * 1000000) + 500000,
+    });
+  }
+
+  return data;
 };
