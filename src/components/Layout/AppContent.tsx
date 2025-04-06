@@ -15,6 +15,7 @@ import EventsCalendar from "../Events/EventsCalendar";
 import BacktestDashboard from "../StrategyBuilder/BacktestDashboard";
 import Dashboard from "../Dashboard/Dashboard";
 import WorkflowsPage from "../Workflows/WorkflowsPage";
+import Research from "../Research";
 
 interface AppContentProps {
   colorMode: "light" | "dark";
@@ -105,6 +106,14 @@ const AppContent: React.FC<AppContentProps> = ({
               element={
                 <ProtectedRoute>
                   <ServiceDetails colorMode={colorMode} />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/research"
+              element={
+                <ProtectedRoute>
+                  <Research />
                 </ProtectedRoute>
               }
             />

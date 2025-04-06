@@ -5,6 +5,7 @@ import { ChartProvider } from "./contexts/ChartContext";
 import { EventsProvider } from "./contexts/EventsContext";
 import { NotificationsProvider } from "./contexts/NotificationsContext";
 import AppContent from "./components/Layout/AppContent";
+import { Toaster } from "./components/ui/toaster";
 
 const App: React.FC = () => {
   const [colorMode, setColorMode] = useState<"light" | "dark">("light");
@@ -23,6 +24,7 @@ const App: React.FC = () => {
                 colorMode={colorMode}
                 toggleColorMode={toggleColorMode}
               />
+              <Toaster />
             </Router>
           </NotificationsProvider>
         </EventsProvider>

@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   Activity,
   Database,
+  LineChart,
 } from "lucide-react";
 import { NavigationItem } from "./types";
 
@@ -48,6 +49,12 @@ export const getNavigationItems = (): NavigationItem[] => [
     path: "/monitoring",
     label: "Monitoring",
     icon: Activity,
+    requireAuth: true,
+  },
+  {
+    path: "/research",
+    label: "Research",
+    icon: LineChart,
     requireAuth: true,
   },
   { path: "/about", label: "About", icon: Info },
